@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29123.88
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShaderTranslator.Test", "ShaderTranslatorTest\ShaderTranslator.Test.csproj", "{AB066F08-1317-40DB-816B-1C900FD7ECC2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShaderTranslator", "ShaderTranslator\ShaderTranslator.csproj", "{7F306386-65D3-43EC-8DBC-79CA8A4E5701}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AB066F08-1317-40DB-816B-1C900FD7ECC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB066F08-1317-40DB-816B-1C900FD7ECC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB066F08-1317-40DB-816B-1C900FD7ECC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB066F08-1317-40DB-816B-1C900FD7ECC2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F306386-65D3-43EC-8DBC-79CA8A4E5701}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F306386-65D3-43EC-8DBC-79CA8A4E5701}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F306386-65D3-43EC-8DBC-79CA8A4E5701}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F306386-65D3-43EC-8DBC-79CA8A4E5701}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BC047BEF-4D5F-4A74-BAF7-8C7258F35D4D}
+	EndGlobalSection
+EndGlobal
