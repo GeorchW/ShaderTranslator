@@ -18,8 +18,7 @@ namespace ShaderTranslator
         public void AddExternalsResolver(IExternalsResolver resolver) => resolvers.Add(resolver);
         public string? TryResolve(INamedElement symbol)
         {
-            string? result;
-            if (cachedResolutions.TryGetValue(symbol, out result))
+            if (cachedResolutions.TryGetValue(symbol, out string? result))
                 return result;
             foreach (var resolver in resolvers)
             {
