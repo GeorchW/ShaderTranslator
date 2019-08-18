@@ -20,7 +20,7 @@ namespace ShaderTranslator.Test
         [Test]
         public void BasicShaderCompilationWorks()
         {
-            var engine = new CompileEngine();
+            var engine = new CompileEngine(SymbolResolver.Default);
             string result = engine.Compile<float, int>(SimpleDummyShader, out _);
         }
     }

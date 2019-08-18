@@ -18,6 +18,7 @@ namespace ShaderTranslator
 
         TypeManager TypeManager => parent.Parent.TypeManager;
         MethodManager MethodManager => parent.Parent.MethodManager;
+        SymbolResolver SymbolResolver => parent.Parent.SymbolResolver;
 
         Dictionary<int, string> parameterTranslation = new Dictionary<int, string>();
         Dictionary<int, string> variableTranslation = new Dictionary<int, string>();
@@ -267,7 +268,7 @@ namespace ShaderTranslator
             {
                 memberReferenceExpression.Target.AcceptVisitor(this);
                 codeBuilder.Write(".");
-                codeBuilder.Write(field.Name);
+                codeBuilder.Write(SymbolResolver.TryResolve(field) ?? field.Name);
             }
             else throw new NotImplementedException();
         }

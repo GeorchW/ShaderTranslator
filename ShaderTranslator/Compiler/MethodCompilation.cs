@@ -22,13 +22,13 @@ namespace ShaderTranslator
         public string Code => code ?? throw new Exception("Need to compile first!");
 
 
-        public MethodCompilation(ShaderCompilation parent, ILSpyManager ilSpyManager, IMethod method, bool isRoot)
+        public MethodCompilation(ShaderCompilation parent, ILSpyManager ilSpyManager, IMethod method, string name, bool isRoot)
         {
             this.Method = method;
             IsRoot = isRoot;
             this.Parent = parent;
             this.scope = new NamingScope(parent.GlobalScope);
-            Name = parent.GlobalScope.GetFreeName(method.Name);
+            Name = name;
 
             declaration = ilSpyManager.GetSyntaxTree(method)
                 .Children

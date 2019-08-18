@@ -12,15 +12,17 @@ namespace ShaderTranslator
     {
         Dictionary<IType, string> KnownTypes = new Dictionary<IType, string>();
         IDecompilerTypeSystem TypeSystem;
+        SymbolResolver symbolResolver;
 
         List<TypeCompilation> translatedTypes = new List<TypeCompilation>();
         Queue<TypeCompilation> toBeVisited = new Queue<TypeCompilation>();
 
         NamingScope globalScope;
 
-        public TypeManager(IDecompilerTypeSystem typeSystem, NamingScope globalScope)
+        public TypeManager(IDecompilerTypeSystem typeSystem, SymbolResolver symbolResolver, NamingScope globalScope)
         {
             TypeSystem = typeSystem;
+            this.symbolResolver = symbolResolver;
             this.globalScope = globalScope;
 
             AddKnownType(typeof(int), "int");
@@ -37,15 +39,18 @@ namespace ShaderTranslator
         {
             if (KnownTypes.TryGetValue(type, out var result))
                 return result;
-            else if(type.Kind == TypeKind.Struct)
+            else if (symbolResolver.TryResolve(type) is string knownSymbol)
+                return knownSymbol;
+            else if (type.Kind == TypeKind.Struct)
             {
                 string name = globalScope.GetFreeName(type.Name);
                 var compilation = new TypeCompilation(type, name);
                 KnownTypes.Add(type, name);
                 toBeVisited.Enqueue(compilation);
                 translatedTypes.Add(compilation);
+                return name;
             }
-            return KnownTypes[type];
+            else throw new Exception($"Type {type.Name} can't be translated.");
         }
 
         public bool CompileNextType()

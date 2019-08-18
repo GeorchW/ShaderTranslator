@@ -9,7 +9,7 @@ namespace ShaderTranslator.Test
     {
         protected CompileEngine engine;
         [SetUp]
-        public void Setup() => engine = new CompileEngine();
+        public void Setup() => engine = new CompileEngine(SymbolResolver.Default);
 
         protected void TestPixelShader<TIn, TOut>(Func<TIn, TOut> shaderFunction)
         {

@@ -12,18 +12,27 @@ namespace ShaderTranslator
         Queue<MethodCompilation> toBeVisited = new Queue<MethodCompilation>();
         ILSpyManager ilSpyManager;
         ShaderCompilation parent;
-        public MethodManager(ShaderCompilation parent, ILSpyManager ilSpyManager)
+        SymbolResolver symbolResolver;
+
+        public MethodManager(ShaderCompilation parent, SymbolResolver symbolResolver, ILSpyManager ilSpyManager)
         {
             this.parent = parent;
+            this.symbolResolver = symbolResolver;
             this.ilSpyManager = ilSpyManager;
         }
         public MethodCompilation Require(IMethod method, bool isRoot = false)
         {
             if (seenMethods.TryGetValue(method, out var result))
                 return result;
+            else if (symbolResolver.TryResolve(method) is string methodName)
+            {
+                result = new MethodCompilation(parent, ilSpyManager, method, methodName, isRoot);
+                seenMethods.Add(method, result);
+            }
             else
             {
-                result = new MethodCompilation(parent, ilSpyManager, method, isRoot);
+                var name = parent.GlobalScope.GetFreeName(method.Name);
+                result = new MethodCompilation(parent, ilSpyManager, method, name, isRoot);
                 seenMethods.Add(method, result);
                 toBeVisited.Enqueue(result);
             }

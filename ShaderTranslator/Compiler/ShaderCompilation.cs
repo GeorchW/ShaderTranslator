@@ -11,14 +11,16 @@ namespace ShaderTranslator
         public NamingScope GlobalScope { get; } = new NamingScope(new NameManager());
 
         public MethodCompilation EntryPoint { get; }
+        public SymbolResolver SymbolResolver { get; }
 
-        public ShaderCompilation(ILSpyManager ilSpyManager, MethodInfo rootMethod)
+        public ShaderCompilation(ILSpyManager ilSpyManager, SymbolResolver symbolResolver, MethodInfo rootMethod)
         {
             var decompiler = ilSpyManager.GetDecompiler(rootMethod.Module.Assembly);
-            TypeManager = new TypeManager(decompiler.TypeSystem, GlobalScope);
-            MethodManager = new MethodManager(this, ilSpyManager);
+            TypeManager = new TypeManager(decompiler.TypeSystem, symbolResolver, GlobalScope);
+            MethodManager = new MethodManager(this, symbolResolver, ilSpyManager);
             var entryPoint = decompiler.TypeSystem.MainModule.GetDefinition((MethodDefinitionHandle)rootMethod.GetEntityHandle());
             EntryPoint = MethodManager.Require(entryPoint, true);
+            SymbolResolver = symbolResolver;
         }
 
         public string Compile()
