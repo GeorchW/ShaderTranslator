@@ -13,20 +13,23 @@ namespace ShaderTranslator
     class MethodBodyVisitor : DepthFirstAstVisitor
     {
         IndentedStringBuilder codeBuilder;
-        TypeManager typeManager;
+        MethodCompilation parent;
         NamingScope scope;
+
+        TypeManager TypeManager => parent.Parent.TypeManager;
+        MethodManager MethodManager => parent.Parent.MethodManager;
 
         Dictionary<int, string> parameterTranslation = new Dictionary<int, string>();
         Dictionary<int, string> variableTranslation = new Dictionary<int, string>();
 
         public MethodBodyVisitor(
             IndentedStringBuilder codeBuilder,
-            TypeManager typeManager,
+            MethodCompilation parent,
             NamingScope parentScope,
             Dictionary<int, string> parameters)
         {
             this.codeBuilder = codeBuilder;
-            this.typeManager = typeManager;
+            this.parent = parent;
             this.scope = new NamingScope(parentScope);
 
             parameterTranslation = parameters;
@@ -75,7 +78,7 @@ namespace ShaderTranslator
         {
             foreach (var variable in variableDeclarationStatement.Variables)
             {
-                codeBuilder.Write(typeManager.GetTypeString(variableDeclarationStatement.Type));
+                codeBuilder.Write(TypeManager.GetTypeString(variableDeclarationStatement.Type));
                 codeBuilder.Write(" ");
                 variable.AcceptVisitor(this);
                 codeBuilder.WriteLine(";");
@@ -153,9 +156,31 @@ namespace ShaderTranslator
         {
             var member = invocationExpression.Annotation<InvocationResolveResult>().Member;
             if (member.Substitution != TypeParameterSubstitution.Identity)
-                throw new NotImplementedException();
+                throw new NotImplementedException("Generic methods are not implemented.");
 
-            base.VisitInvocationExpression(invocationExpression);
+            var method = MethodManager.Require((IMethod)member);
+            if(!method.Method.IsStatic)
+            {
+                throw new NotImplementedException("Instance methods are not supported yet");
+            }
+            codeBuilder.Write(method.Name);
+            codeBuilder.Write("(");
+            bool isFirst = true;
+            if (!method.Method.IsStatic)
+            {
+                AddParameter(invocationExpression.Target);
+            }
+            foreach (var param in invocationExpression.Arguments)
+            {
+                AddParameter(param);
+            }
+            void AddParameter(AstNode param)
+            {
+                if (isFirst) isFirst = false;
+                else codeBuilder.Write(", ");
+                param.AcceptVisitor(this);
+            }
+            codeBuilder.Write(")");
         }
 
         public override void VisitWhileStatement(WhileStatement whileStatement)
@@ -230,9 +255,21 @@ namespace ShaderTranslator
             if (resolveResult.Conversion.IsUserDefined)
                 throw new Exception("Custom cast operators are not supported yet");
             codeBuilder.Write("(");
-            codeBuilder.Write(typeManager.GetTypeString(resolveResult.Type));
+            codeBuilder.Write(TypeManager.GetTypeString(resolveResult.Type));
             codeBuilder.Write(")");
             castExpression.Expression.AcceptVisitor(this);
+        }
+
+        public override void VisitMemberReferenceExpression(MemberReferenceExpression memberReferenceExpression)
+        {
+            var memberResolveResult = memberReferenceExpression.Annotation<MemberResolveResult>();
+            if (memberResolveResult.Member is IField field)
+            {
+                memberReferenceExpression.Target.AcceptVisitor(this);
+                codeBuilder.Write(".");
+                codeBuilder.Write(field.Name);
+            }
+            else throw new NotImplementedException();
         }
     }
 }
