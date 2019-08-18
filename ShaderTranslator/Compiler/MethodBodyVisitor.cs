@@ -272,5 +272,19 @@ namespace ShaderTranslator
             }
             else throw new NotImplementedException();
         }
+
+        public override void VisitIndexerExpression(IndexerExpression indexerExpression)
+        {
+            indexerExpression.Target.AcceptVisitor(this);
+            codeBuilder.Write("[");
+            bool isFirst = true;
+            foreach (var index in indexerExpression.Arguments)
+            {
+                if (isFirst) isFirst = false;
+                else codeBuilder.Write(", ");
+                index.AcceptVisitor(this);
+            }
+            codeBuilder.Write("]");
+        }
     }
 }

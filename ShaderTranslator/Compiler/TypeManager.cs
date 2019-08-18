@@ -91,9 +91,27 @@ namespace ShaderTranslator
             codeBuilder.IncreaseIndent();
             foreach (var field in Type.GetFields())
             {
-                codeBuilder.Write(typeManager.GetTypeString(field.Type));
-                codeBuilder.Write(" ");
-                codeBuilder.Write(field.Name);
+                if (field.Type is ArrayType arrayType)
+                {
+                    var inner = arrayType.ElementType;
+                    var length = field.GetAttributes()
+                        .Where(attr => attr.AttributeType.FullName == typeof(Syntax.ArrayLengthAttribute).FullName)
+                        .Single()
+                        .FixedArguments[0]
+                        .Value;
+                    codeBuilder.Write(typeManager.GetTypeString(inner));
+                    codeBuilder.Write(" ");
+                    codeBuilder.Write(field.Name);
+                    codeBuilder.Write("[");
+                    codeBuilder.Write((int)length);
+                    codeBuilder.Write("]");
+                }
+                else
+                {
+                    codeBuilder.Write(typeManager.GetTypeString(field.Type));
+                    codeBuilder.Write(" ");
+                    codeBuilder.Write(field.Name);
+                }
                 codeBuilder.WriteLine(";");
             }
             codeBuilder.DecreaseIndent();
