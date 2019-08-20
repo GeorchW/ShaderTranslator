@@ -19,6 +19,7 @@ namespace ShaderTranslator
         TypeManager TypeManager => parent.Parent.TypeManager;
         MethodManager MethodManager => parent.Parent.MethodManager;
         SymbolResolver SymbolResolver => parent.Parent.SymbolResolver;
+        ShaderResourceManager ShaderResourceManager => parent.Parent.ShaderResourceManager;
 
         Dictionary<int, string> parameterTranslation = new Dictionary<int, string>();
         Dictionary<int, string> variableTranslation = new Dictionary<int, string>();
@@ -155,19 +156,30 @@ namespace ShaderTranslator
 
         public override void VisitInvocationExpression(InvocationExpression invocationExpression)
         {
-            var member = invocationExpression.Annotation<InvocationResolveResult>().Member;
-            if (member.Substitution != TypeParameterSubstitution.Identity)
+            var method = (IMethod) invocationExpression.Annotation<InvocationResolveResult>().Member;
+            if (SymbolResolver.IsTextureType(method.DeclaringType))
+            {
+                var target = (invocationExpression.Target as MemberReferenceExpression)?.Target?.Annotation<MemberResolveResult>()?.Member as IField;
+                if (target == null)
+                    throw new Exception("Textures can only be used directly."); //TODO: textures being passed around?
+                var result = ShaderResourceManager.Require(target) as TextureCompilation;
+                if (result == null)
+                    throw new Exception("Textures must be marked as ShaderResource.");
+                result.InvokeSampleCall(codeBuilder, invocationExpression, this);
+                return;
+            }
+            if (method.Substitution != TypeParameterSubstitution.Identity)
                 throw new NotImplementedException("Generic methods are not implemented.");
 
-            var method = MethodManager.Require((IMethod)member);
-            if(!method.Method.IsStatic)
+            var compilation = MethodManager.Require(method);
+            if(!method.IsStatic)
             {
                 throw new NotImplementedException("Instance methods are not supported yet");
             }
-            codeBuilder.Write(method.Name);
+            codeBuilder.Write(compilation.Name);
             codeBuilder.Write("(");
             bool isFirst = true;
-            if (!method.Method.IsStatic)
+            if (!method.IsStatic)
             {
                 AddParameter(invocationExpression.Target);
             }

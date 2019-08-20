@@ -61,11 +61,11 @@ namespace ShaderTranslator
             return true;
         }
 
-        internal void Print(StringBuilder result)
+        internal void Print(IndentedStringBuilder result)
         {
             foreach (var type in translatedTypes.Reverse<TypeCompilation>())
             {
-                result.AppendLine(type.Code);
+                result.WriteLine(type.Code);
             }
         }
     }

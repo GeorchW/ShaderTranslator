@@ -13,6 +13,11 @@ namespace ShaderTranslator
         public void DecreaseIndent() => tabs--;
         public void Write(string str)
         {
+            if(tabs == 0)
+            {
+                result.Append(str);
+                return;
+            }
             if (!tabsWritten)
             {
                 WriteTabs();

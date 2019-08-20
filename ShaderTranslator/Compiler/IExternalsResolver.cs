@@ -31,7 +31,7 @@ namespace ShaderTranslator
         Dictionary<string, string> typeTranslations = new Dictionary<string, string>();
         public SystemNumericsResolver()
         {
-            void AddTranslation(Type type, string name) => typeTranslations.Add(type.FullName, name);
+            void AddTranslation(Type type, string name) => typeTranslations.Add(type.FullName!, name); //not null for ordinary (non-generic etc.) types
             AddTranslation(typeof(System.Numerics.Vector2), "float2");
             AddTranslation(typeof(System.Numerics.Vector3), "float3");
             AddTranslation(typeof(System.Numerics.Vector4), "float4");

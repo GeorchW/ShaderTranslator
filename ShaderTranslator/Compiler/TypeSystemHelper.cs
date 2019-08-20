@@ -3,19 +3,21 @@ using ICSharpCode.Decompiler.TypeSystem;
 using System.Reflection;
 using System.Linq;
 using System.Reflection.Metadata;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ShaderTranslator
 {
     static class TypeSystemHelper
     {
-        public static Type ToReflectionType(this IType type) => Type.GetType(type.ReflectionName);
-        public static MethodInfo ToReflectionMethod(this IMethod method)
+        public static Type? ToReflectionType(this IType type) => Type.GetType(type.ReflectionName);
+        public static MethodInfo? ToReflectionMethod(this IMethod method)
         {
             var type = method.DeclaringType.ToReflectionType();
-            var methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+            var methods = type?.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
             int handle = method.GetMetadataTokenAsInt();
             // This could use some caching.
-            return methods.Where(m => m.MetadataToken == handle).Single();
+            return methods?.Where(m => m.MetadataToken == handle)?.Single();
         }
 
         public static unsafe int GetMetadataTokenAsInt(this IMember member)
@@ -31,6 +33,21 @@ namespace ShaderTranslator
             // is married to System.Reflection, we should remove this.
             int token = member.MetadataToken;
             return *(EntityHandle*)&token;
+        }
+
+        public static bool TryGetAttribute(this IEnumerable<IAttribute> attributes, Type attributeType, [NotNullWhen(true)] out IAttribute? attribute)
+        {
+            string attrName = attributeType.FullName!; //isn't null for attributes
+            foreach (var attr in attributes)
+            {
+                if(attr.AttributeType.FullName == attrName)
+                {
+                    attribute = attr;
+                    return true;
+                }
+            }
+            attribute = null;
+            return false;
         }
     }
 }

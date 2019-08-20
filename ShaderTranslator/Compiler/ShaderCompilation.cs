@@ -12,6 +12,7 @@ namespace ShaderTranslator
 
         public MethodCompilation EntryPoint { get; }
         public SymbolResolver SymbolResolver { get; }
+        public ShaderResourceManager ShaderResourceManager { get; } 
 
         public ShaderCompilation(ILSpyManager ilSpyManager, SymbolResolver symbolResolver, MethodInfo rootMethod)
         {
@@ -21,14 +22,16 @@ namespace ShaderTranslator
             var entryPoint = decompiler.TypeSystem.MainModule.GetDefinition((MethodDefinitionHandle)rootMethod.GetEntityHandle());
             EntryPoint = MethodManager.Require(entryPoint, true);
             SymbolResolver = symbolResolver;
+            ShaderResourceManager = new ShaderResourceManager(TypeManager, SymbolResolver, GlobalScope);
         }
 
         public string Compile()
         {
             while (MethodManager.CompileNextMethod()) ;
             while (TypeManager.CompileNextType()) ;
-            StringBuilder result = new StringBuilder();
+            IndentedStringBuilder result = new IndentedStringBuilder();
             TypeManager.Print(result);
+            ShaderResourceManager.Print(result);
             MethodManager.Print(result);
             return result.ToString();
         }

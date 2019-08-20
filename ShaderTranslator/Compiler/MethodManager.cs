@@ -47,11 +47,11 @@ namespace ShaderTranslator
             methods.Add(method);
             return true;
         }
-        public void Print(StringBuilder target)
+        public void Print(IndentedStringBuilder target)
         {
             foreach (var str in methods.Reverse<MethodCompilation>())
             {
-                target.AppendLine(str.Code);
+                target.WriteLine(str.Code);
             }
         }
     }
