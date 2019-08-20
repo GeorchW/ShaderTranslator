@@ -123,6 +123,7 @@ namespace ShaderTranslator
         public override void VisitIdentifierExpression(IdentifierExpression identifierExpression)
         {
             if (TryLocalAccess(identifierExpression)) return;
+            if (TryConstantBufferAccess(identifierExpression)) return;
             throw new NotImplementedException();
         }
 
@@ -138,6 +139,20 @@ namespace ShaderTranslator
                 return true;
             }
             else return false;
+        }
+
+        bool TryConstantBufferAccess(AstNode node)
+        {
+            var field = node.Annotation<MemberResolveResult>()?.Member as IField;
+            if (field == null)
+                return false;
+
+            var compilation = ShaderResourceManager.Require(field);
+            if (compilation == null)
+                return false;
+
+            codeBuilder.Write(compilation.Name);
+            return true;
         }
 
         public override void VisitReturnStatement(ReturnStatement returnStatement)
