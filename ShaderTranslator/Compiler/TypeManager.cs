@@ -10,45 +10,45 @@ namespace ShaderTranslator
 {
     class TypeManager
     {
-        Dictionary<IType, string> KnownTypes = new Dictionary<IType, string>();
+        Dictionary<IType, TargetType> KnownTypes = new Dictionary<IType, TargetType>();
         IDecompilerTypeSystem TypeSystem;
-        SymbolResolver symbolResolver;
+        MathApi mathApi;
 
-        List<TypeCompilation> translatedTypes = new List<TypeCompilation>();
-        Queue<TypeCompilation> toBeVisited = new Queue<TypeCompilation>();
+        List<StructTargetType> translatedTypes = new List<StructTargetType>();
+        Queue<StructTargetType> toBeVisited = new Queue<StructTargetType>();
 
         NamingScope globalScope;
 
-        public TypeManager(IDecompilerTypeSystem typeSystem, SymbolResolver symbolResolver, NamingScope globalScope)
+        public TypeManager(IDecompilerTypeSystem typeSystem, MathApi mathApi, NamingScope globalScope)
         {
             TypeSystem = typeSystem;
-            this.symbolResolver = symbolResolver;
+            this.mathApi = mathApi;
             this.globalScope = globalScope;
-
-            AddKnownType(typeof(int), "int");
-            AddKnownType(typeof(float), "float");
         }
-        public void AddKnownType(Type type, string name) => KnownTypes.Add(TypeSystem.FindType(type), name);
         public string GetTypeString(AstNode node)
         {
             var type = node.Annotation<ICSharpCode.Decompiler.Semantics.TypeResolveResult>().Type;
             return GetTypeString(type);
         }
 
-        public string GetTypeString(IType type)
+        public string GetTypeString(IType type) => GetTargetType(type).Name;
+
+        public TargetType GetTargetType(IType type)
         {
-            if (KnownTypes.TryGetValue(type, out var result))
-                return result;
-            else if (symbolResolver.TryResolve(type) is string knownSymbol)
-                return knownSymbol;
+            if (KnownTypes.TryGetValue(type, out var knownType))
+                return knownType;
+            else if (mathApi.TryResolve(type, out var mathType))
+                return mathType;
             else if (type.Kind == TypeKind.Struct)
             {
+                if (type.ToPrimitiveType() != ICSharpCode.Decompiler.IL.PrimitiveType.None)
+                    throw new Exception("Primitive type was not translated.");
                 string name = globalScope.GetFreeName(type.Name);
-                var compilation = new TypeCompilation(type, name);
-                KnownTypes.Add(type, name);
+                var compilation = new StructTargetType(type, this, name);
+                KnownTypes.Add(type, compilation);
                 toBeVisited.Enqueue(compilation);
                 translatedTypes.Add(compilation);
-                return name;
+                return compilation;
             }
             else throw new Exception($"Type {type.Name} can't be translated.");
         }
@@ -61,56 +61,100 @@ namespace ShaderTranslator
             return true;
         }
 
-        internal void Print(IndentedStringBuilder result)
+        public void Print(IndentedStringBuilder result)
         {
-            foreach (var type in translatedTypes.Reverse<TypeCompilation>())
+            foreach (var type in translatedTypes.Reverse<StructTargetType>())
             {
                 result.WriteLine(type.Code);
             }
         }
     }
-    class TypeCompilation
+    public abstract class TargetType
     {
-        public IType Type { get; }
         public string Name { get; }
-        string? code;
-        public string Code => code ?? throw new Exception("Call Compile() first!");
+        public bool IsPrimitive { get; }
 
-        public TypeCompilation(IType type, string name)
+        protected TargetType(string name, bool isPrimitive)
         {
-            Type = type;
             Name = name;
+            IsPrimitive = isPrimitive;
+        }
+    }
+    public class PrimitiveTargetType : TargetType
+    {
+        public PrimitiveType PrimitiveType { get; }
+        public PrimitiveTargetType(PrimitiveType targetType)
+            : base(targetType.ToString(), true)
+        {
+            PrimitiveType = targetType;
+        }
+    }
+
+    public class StructTargetType : TargetType
+    {
+        public class Field
+        {
+            public TargetType Type { get; }
+            public string Name { get; }
+            public int? ArrayLength { get; }
+            public bool IsArray => ArrayLength != null;
+            public string? Semantics { get; }
+
+            public Field(TargetType type, string name, int? arrayLength, string? semantics)
+            {
+                Type = type;
+                Name = name;
+                ArrayLength = arrayLength;
+                Semantics = semantics;
+            }
+        }
+        string? code;
+        internal string Code => code ?? throw new Exception("Call Compile() first!");
+        IReadOnlyList<Field>? fields;
+        public IReadOnlyList<Field> Fields => fields ?? throw new Exception("Call Compile() first!");
+        public IType SourceType { get; }
+
+        internal StructTargetType(IType sourceType, TypeManager typeManager, string name)
+            : base(name, false)
+        {
+            SourceType = sourceType;
         }
 
-        public void Compile(TypeManager typeManager)
+        Field Convert(TypeManager typeManager, IField field)
         {
+            var type = field.Type;
+            int? arrayLength = null;
+            if (type is ArrayType arrayType)
+            {
+                arrayLength = (int)field.GetAttributes()
+                    .Where(attr => attr.AttributeType.FullName == typeof(Syntax.ArrayLengthAttribute).FullName)
+                    .Single()
+                    .FixedArguments[0]
+                    .Value;
+                type = arrayType.ElementType;
+            }
+            return new Field(typeManager.GetTargetType(type), field.Name, arrayLength, null);
+        }
+
+        internal void Compile(TypeManager typeManager)
+        {
+            fields = SourceType.GetFields().Select(field => Convert(typeManager, field)).ToArray();
+
             var codeBuilder = new IndentedStringBuilder();
             codeBuilder.Write("struct ");
             codeBuilder.WriteLine(Name);
             codeBuilder.WriteLine("{");
             codeBuilder.IncreaseIndent();
-            foreach (var field in Type.GetFields())
+            foreach (var field in Fields)
             {
-                if (field.Type is ArrayType arrayType)
+                codeBuilder.Write(field.Type.Name);
+                codeBuilder.Write(" ");
+                codeBuilder.Write(field.Name);
+                if (field.ArrayLength is int length)
                 {
-                    var inner = arrayType.ElementType;
-                    var length = field.GetAttributes()
-                        .Where(attr => attr.AttributeType.FullName == typeof(Syntax.ArrayLengthAttribute).FullName)
-                        .Single()
-                        .FixedArguments[0]
-                        .Value;
-                    codeBuilder.Write(typeManager.GetTypeString(inner));
-                    codeBuilder.Write(" ");
-                    codeBuilder.Write(field.Name);
                     codeBuilder.Write("[");
-                    codeBuilder.Write((int)length);
+                    codeBuilder.Write(length);
                     codeBuilder.Write("]");
-                }
-                else
-                {
-                    codeBuilder.Write(typeManager.GetTypeString(field.Type));
-                    codeBuilder.Write(" ");
-                    codeBuilder.Write(field.Name);
                 }
                 codeBuilder.WriteLine(";");
             }

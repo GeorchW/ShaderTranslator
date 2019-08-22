@@ -24,9 +24,9 @@ namespace ShaderTranslator
         {
             if (seenMethods.TryGetValue(method, out var result))
                 return result;
-            else if (symbolResolver.TryResolve(method) is string methodName)
+            else if (symbolResolver.TryResolve(method) is ResolveResult result2)
             {
-                result = new MethodCompilation(parent, ilSpyManager, method, methodName, isRoot);
+                result = new MethodCompilation(parent, ilSpyManager, method, result2.Name, isRoot);
                 seenMethods.Add(method, result);
             }
             else

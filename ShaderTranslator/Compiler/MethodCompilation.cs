@@ -89,6 +89,9 @@ namespace ShaderTranslator
 
         void WriteMethodBody()
         {
+            if (!Method.HasBody)
+                throw new Exception("Method must have a body.");
+
             codeBuilder.WriteLine("{");
             codeBuilder.IncreaseIndent();
 

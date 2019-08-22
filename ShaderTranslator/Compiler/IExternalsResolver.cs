@@ -5,14 +5,35 @@ using System.Text;
 
 namespace ShaderTranslator
 {
-    interface IExternalsResolver
+    public enum ResolveType
     {
-        string? TryResolve(INamedElement symbol);
+        Field,
+        Method,
+        Operator
+    }
+    public struct ResolveResult
+    {
+        public ResolveType Type;
+        public string Name;
+
+        public ResolveResult(ResolveType type, string name)
+        {
+            Type = type;
+            Name = name;
+        }
+
+        public static ResolveResult Field(string name) => new ResolveResult(ResolveType.Field, name);
+        public static ResolveResult Method(string name) => new ResolveResult(ResolveType.Method, name);
+        public static ResolveResult Operator(string name) => new ResolveResult(ResolveType.Operator, name);
+    }
+    public interface IExternalsResolver
+    {
+        ResolveResult? TryResolve(ISymbol symbol, MathApi mathApi);
     }
 
-    class MathResolver : IExternalsResolver
+    class SystemMathResolver : IExternalsResolver
     {
-        public string? TryResolve(INamedElement symbol)
+        public ResolveResult? TryResolve(ISymbol symbol, MathApi mathApi)
         {
             if (symbol is IMethod method
                 && method.IsStatic
@@ -20,34 +41,75 @@ namespace ShaderTranslator
                 && (method.DeclaringType.FullName == "System.Math"
                 || method.DeclaringType.FullName == "System.MathF"))
             {
-                return method.Name.ToLowerInvariant();
+                return ResolveResult.Method(method.Name.ToLowerInvariant());
             }
             else return null;
         }
     }
 
-    class SystemNumericsResolver : IExternalsResolver
+    class VectorComponentResolver : IExternalsResolver
     {
-        Dictionary<string, string> typeTranslations = new Dictionary<string, string>();
-        public SystemNumericsResolver()
+        public ResolveResult? TryResolve(ISymbol symbol, MathApi mathApi)
         {
-            void AddTranslation(Type type, string name) => typeTranslations.Add(type.FullName!, name); //not null for ordinary (non-generic etc.) types
-            AddTranslation(typeof(System.Numerics.Vector2), "float2");
-            AddTranslation(typeof(System.Numerics.Vector3), "float3");
-            AddTranslation(typeof(System.Numerics.Vector4), "float4");
-            AddTranslation(typeof(System.Numerics.Matrix3x2), "matrix3x2");
-            AddTranslation(typeof(System.Numerics.Matrix4x4), "matrix");
-        }
-        public string? TryResolve(INamedElement symbol)
-        {
-            if (symbol is IType type
-                && typeTranslations.TryGetValue(type.FullName, out var value))
-                return value;
             if (symbol is IField field
-                && typeTranslations.ContainsKey(field.DeclaringType.FullName)
+                && mathApi.TryResolve(field.DeclaringType, out var primitiveType)
                 && field.Name.Length == 1
                 && field.Name[0] >= 'W' && field.Name[0] <= 'Z')
-                return field.Name.ToLowerInvariant();
+                return ResolveResult.Field(field.Name.ToLowerInvariant());
+            return null;
+        }
+    }
+
+    class VectorLengthResolver : IExternalsResolver
+    {
+        public ResolveResult? TryResolve(ISymbol symbol, MathApi mathApi)
+        {
+            if (symbol is IMethod method
+                && mathApi.TryResolve(method.DeclaringType, out var result)
+                && result.PrimitiveType.IsVector
+                && method.Name == "Length")
+                return ResolveResult.Method("length");
+            return null;
+        }
+    }
+
+    class VectorOperatorResolver : IExternalsResolver
+    {
+        Dictionary<string, string> ops = new Dictionary<string, string> {
+            { "op_Addition", "+" },
+            { "op_Subtraction", "-" },
+            { "op_Multiply", "*" },
+            { "op_Division", "/" },
+
+            { "op_UnaryNegation", "-" },
+        };
+
+        public ResolveResult? TryResolve(ISymbol symbol, MathApi mathApi)
+        {
+            if (symbol is IMethod method
+                && method.IsOperator
+                && mathApi.TryResolve(method.DeclaringType, out _))
+            {
+                if (!ops.TryGetValue(method.Name, out var op))
+                    return null;
+
+                if (method.Parameters.Count == 2)
+                {
+                    var (left, right) = (method.Parameters[0], method.Parameters[1]);
+
+                    if (!mathApi.TryResolve(left.Type, out var leftType))
+                        return null;
+                    if (!mathApi.TryResolve(right.Type, out var rightType))
+                        return null;
+                    if (leftType.PrimitiveType.IsVector && rightType.PrimitiveType.IsVector
+                        && leftType.PrimitiveType == rightType.PrimitiveType)
+                        return ResolveResult.Operator(op);
+                    else if (leftType.PrimitiveType.IsScalar || rightType.PrimitiveType.IsScalar)
+                        return ResolveResult.Operator(op);
+                    else
+                        return null;
+                }
+            }
             return null;
         }
     }

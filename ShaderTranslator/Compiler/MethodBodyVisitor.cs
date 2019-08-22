@@ -295,7 +295,7 @@ namespace ShaderTranslator
             {
                 memberReferenceExpression.Target.AcceptVisitor(this);
                 codeBuilder.Write(".");
-                codeBuilder.Write(SymbolResolver.TryResolve(field) ?? field.Name);
+                codeBuilder.Write(SymbolResolver.TryResolve(field)?.Name ?? field.Name);
             }
             else throw new NotImplementedException();
         }

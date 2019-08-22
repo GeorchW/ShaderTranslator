@@ -5,7 +5,7 @@ using ICSharpCode.Decompiler.CSharp;
 
 namespace ShaderTranslator
 {
-    class CompileEngine
+    public class CompileEngine
     {
         ILSpyManager ilSpyManager = new ILSpyManager();
         public SymbolResolver SymbolResolver { get; }
