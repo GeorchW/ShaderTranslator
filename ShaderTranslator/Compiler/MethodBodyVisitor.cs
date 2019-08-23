@@ -65,15 +65,98 @@ namespace ShaderTranslator
         public override void VisitBinaryOperatorExpression(BinaryOperatorExpression binaryOperatorExpression)
         {
             var invocation = binaryOperatorExpression.Annotation<InvocationResolveResult>();
+            string op = OperatorHelper.GetOperatorString(binaryOperatorExpression.Operator);
             if (invocation != null)
             {
-                throw new Exception("Custom binary operators are not supported yet");
+                if (SymbolResolver.TryResolve(invocation.Member) is ResolveResult result
+                    && result.Type == ResolveType.Operator
+                    && result.Name == op)
+                {
+                    VisitAsUsual();
+                }
+                else VisitInvocation(invocation, new[] { binaryOperatorExpression.Left, binaryOperatorExpression.Right });
             }
-            binaryOperatorExpression.Left.AcceptVisitor(this);
-            codeBuilder.Write(" ");
-            codeBuilder.Write(OperatorHelper.GetOperatorString(binaryOperatorExpression.Operator));
-            codeBuilder.Write(" ");
-            binaryOperatorExpression.Right.AcceptVisitor(this);
+            else
+            {
+                VisitAsUsual();
+            }
+
+            void VisitAsUsual()
+            {
+                binaryOperatorExpression.Left.AcceptVisitor(this);
+                codeBuilder.Write(" ");
+                codeBuilder.Write(op);
+                codeBuilder.Write(" ");
+                binaryOperatorExpression.Right.AcceptVisitor(this);
+            }
+        }
+
+        void VisitInvocation(InvocationResolveResult invocation, IReadOnlyList<Expression> arguments)
+        {
+            if (SymbolResolver.TryResolve(invocation.Member) is ResolveResult result)
+            {
+                switch (result.Type)
+                {
+                    case ResolveType.Field:
+                        if (arguments.Count != 1)
+                            throw new Exception();
+                        arguments[0].AcceptVisitor(this);
+                        codeBuilder.Write(".");
+                        codeBuilder.Write(result.Name);
+                        break;
+                    case ResolveType.Method:
+                        WriteCall(result.Name, arguments);
+                        break;
+                    case ResolveType.Operator:
+                        if (arguments.Count == 1)
+                        {
+                            codeBuilder.Write(result.Name);
+                            codeBuilder.Write("(");
+                            arguments[0].AcceptVisitor(this);
+                            codeBuilder.Write(")");
+                        }
+                        else if (arguments.Count == 2)
+                        {
+                            codeBuilder.Write("((");
+                            arguments[0].AcceptVisitor(this);
+                            codeBuilder.Write(") ");
+                            codeBuilder.Write(result.Name);
+                            codeBuilder.Write(" (");
+                            arguments[1].AcceptVisitor(this);
+                            codeBuilder.Write("))");
+                        }
+                        else throw new Exception();
+                        break;
+                    default:
+                        throw new Exception();
+                }
+            }
+            else
+            {
+                var method = (IMethod)invocation.Member;
+                if (method.TypeParameters.Count != 0)
+                    throw new NotImplementedException("Generic methods are not implemented.");
+
+                var compilation = MethodManager.Require(method);
+                WriteCall(compilation.Name, arguments);
+            }
+        }
+        void WriteCall(string methodName, IEnumerable<Expression> arguments)
+        {
+            codeBuilder.Write(methodName);
+            codeBuilder.Write("(");
+            bool isFirst = true;
+            foreach (var param in arguments)
+            {
+                AddParameter(param);
+            }
+            void AddParameter(AstNode param)
+            {
+                if (isFirst) isFirst = false;
+                else codeBuilder.Write(", ");
+                param.AcceptVisitor(this);
+            }
+            codeBuilder.Write(")");
         }
 
         public override void VisitVariableDeclarationStatement(VariableDeclarationStatement variableDeclarationStatement)
@@ -171,7 +254,7 @@ namespace ShaderTranslator
 
         public override void VisitInvocationExpression(InvocationExpression invocationExpression)
         {
-            var method = (IMethod) invocationExpression.Annotation<InvocationResolveResult>().Member;
+            var method = (IMethod)invocationExpression.Annotation<InvocationResolveResult>().Member;
             if (SymbolResolver.IsTextureType(method.DeclaringType))
             {
                 var target = (invocationExpression.Target as MemberReferenceExpression)?.Target?.Annotation<MemberResolveResult>()?.Member as IField;
@@ -187,7 +270,7 @@ namespace ShaderTranslator
                 throw new NotImplementedException("Generic methods are not implemented.");
 
             var compilation = MethodManager.Require(method);
-            if(!method.IsStatic)
+            if (!method.IsStatic)
             {
                 throw new NotImplementedException("Instance methods are not supported yet");
             }
@@ -312,6 +395,18 @@ namespace ShaderTranslator
                 index.AcceptVisitor(this);
             }
             codeBuilder.Write("]");
+        }
+        public override void VisitObjectCreateExpression(ObjectCreateExpression objectCreateExpression)
+        {
+            var ctor = (IMethod)objectCreateExpression.Annotation<InvocationResolveResult>().Member;
+            //TODO: Only valid ctors should be compiled implicitely.
+            // Others may have to be translated (special cases).
+            // For example, we can simulate custom struct constructors.
+            var itype = ctor.DeclaringType;
+            var type = TypeManager.GetTargetType(itype);
+            if (!type.IsPrimitive)
+                throw new Exception("Constructors of non-primitive types aren't supported.");
+            WriteCall(type.Name, objectCreateExpression.Arguments);
         }
     }
 }
