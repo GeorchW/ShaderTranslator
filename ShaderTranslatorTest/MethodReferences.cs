@@ -1,6 +1,7 @@
 ﻿using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 
 namespace ShaderTranslator.Test
@@ -12,5 +13,7 @@ namespace ShaderTranslator.Test
         public void StaticMethodReference() => TestPixelShader((float f) => Increment(f));
         [Test]
         public void MultiStaticMethodReference() => TestPixelShader((float f) => Increment(f) + Increment(f));
+        [Test]
+        public void InstanceMethodReference() => TestPixelShader((Vector2 v) => v.Length());
     }
 }

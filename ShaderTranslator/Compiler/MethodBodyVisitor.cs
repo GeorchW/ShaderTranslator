@@ -270,16 +270,13 @@ namespace ShaderTranslator
                 throw new NotImplementedException("Generic methods are not implemented.");
 
             var compilation = MethodManager.Require(method);
-            if (!method.IsStatic)
-            {
-                throw new NotImplementedException("Instance methods are not supported yet");
-            }
             codeBuilder.Write(compilation.Name);
             codeBuilder.Write("(");
             bool isFirst = true;
             if (!method.IsStatic)
             {
-                AddParameter(invocationExpression.Target);
+                var target = ((MemberReferenceExpression)invocationExpression.Target).Target;
+                AddParameter(target);
             }
             foreach (var param in invocationExpression.Arguments)
             {
