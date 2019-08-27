@@ -7,6 +7,8 @@ using System.Windows.Forms;
 using Device = SharpDX.Direct3D11.Device;
 using Buffer = SharpDX.Direct3D11.Buffer;
 using ShaderTranslator.Syntax;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 namespace ShaderTranslator.Demo
 {
@@ -47,19 +49,10 @@ namespace ShaderTranslator.Demo
 
 
             Func<Vector2, VsOutput> vsMethod = (Vector2 input) => new VsOutput { Position = new Vector4(input, 0, 1), TexCoord = input };
-            var vsBytecode = Compile(vsMethod, new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.VertexShader), "vs_5_0");
-
-            var inputLayout = new InputLayout(device,
-                vsBytecode.Bytecode.Data,
-                new InputElement[] {
-                    new InputElement("TEXCOORD", 0, Format.R32G32_Float, 0)
-            });
-
-            var vs = new VertexShader(device, vsBytecode.Bytecode.Data);
+            var (vs, inputLayout) = CompileVertexShader(vsMethod, device);
 
             Func<Vector2, Vector4> psMethod = input => new Vector4(input * 2, 0, 1);
-            var psBytecode = Compile(psMethod, new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.PixelShader), "ps_5_0");
-            var ps = new PixelShader(device, psBytecode.Bytecode.Data);
+            var ps = CompilePixelShader(psMethod, device);
 
             var vertexBuffer = Buffer.Create(device, BindFlags.VertexBuffer, new Vector2[] {
                 new Vector2(0.5f, 0.5f),
@@ -98,10 +91,65 @@ namespace ShaderTranslator.Demo
         }
 
         static CompileEngine compileEngine = new CompileEngine(SymbolResolver.Default);
-        private static SharpDX.D3DCompiler.CompilationResult Compile(Delegate shader, SemanticsGenerator semanticsGenerator, string model)
+        private static (VertexShader, InputLayout) CompileVertexShader(Delegate shaderMethod, Device device)
         {
-            string shaderCode = compileEngine.Compile(shader.Target, shader.Method, semanticsGenerator, out string entryPoint);
-            return SharpDX.D3DCompiler.ShaderBytecode.Compile(shaderCode, entryPoint, model);
+            var semanticsGenerator = new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.VertexShader);
+            var result = compileEngine.Compile(shaderMethod.Target, shaderMethod.Method, semanticsGenerator);
+            List<InputElement> inputElements = new List<InputElement>();
+            foreach (var parameter in result.EntryPoint.Parameters)
+            {
+                if (parameter.Semantics != null)
+                {
+                    var match = Regex.Match(parameter.Semantics, "([a-zA-Z]*)(\\d?)");
+                    if (match.Success)
+                    {
+                        string name = match.Groups[1].Value;
+                        if (!int.TryParse(match.Groups[2].Value, out int index))
+                            index = 0;
+                        if (!(parameter.Type is PrimitiveTargetType primitive))
+                            throw new Exception();
+                        PrimitiveType primitiveType = primitive.PrimitiveType;
+                        inputElements.Add(new InputElement(name, index, ToDxgiFormat(primitiveType), 0));
+                        continue;
+                    }
+                }
+                throw new Exception();
+            }
+            var compilation = SharpDX.D3DCompiler.ShaderBytecode.Compile(result.Code, result.EntryPoint.Name, "vs_5_0");
+            var shader = new VertexShader(device, compilation.Bytecode.Data);
+            var inputLayout = new InputLayout(device, compilation.Bytecode.Data, inputElements.ToArray());
+            return (shader, inputLayout);
         }
+
+        private static PixelShader CompilePixelShader(Delegate shaderMethod, Device device)
+        {
+            var semanticsGenerator = new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.PixelShader);
+            var result = compileEngine.Compile(shaderMethod.Target, shaderMethod.Method, semanticsGenerator);
+            var compilation = SharpDX.D3DCompiler.ShaderBytecode.Compile(result.Code, result.EntryPoint.Name, "ps_5_0");
+            var shader = new PixelShader(device, compilation.Bytecode.Data);
+            return shader;
+        }
+
+        private static Format ToDxgiFormat(PrimitiveType primitiveType)
+            => primitiveType.ComponentType switch
+            {
+                ComponentType.Float => primitiveType.Length switch
+                {
+                    VectorLength.Scalar => Format.R32_Float,
+                    VectorLength.Vector2 => Format.R32G32_Float,
+                    VectorLength.Vector3 => Format.R32G32B32_Float,
+                    VectorLength.Vector4 => Format.R32G32B32A32_Float,
+                    _ => throw new NotImplementedException()
+                },
+                ComponentType.Int => primitiveType.Length switch
+                {
+                    VectorLength.Scalar => Format.R32_SInt,
+                    VectorLength.Vector2 => Format.R32G32_SInt,
+                    VectorLength.Vector3 => Format.R32G32B32_SInt,
+                    VectorLength.Vector4 => Format.R32G32B32A32_SInt,
+                    _ => throw new NotImplementedException()
+                },
+                _ => throw new NotImplementedException()
+            };
     }
 }

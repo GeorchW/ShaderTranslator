@@ -4,19 +4,21 @@ using System.Reflection.Metadata;
 
 namespace ShaderTranslator
 {
-    class ShaderCompilation
+    public class ShaderCompilation
     {
-        public TypeManager TypeManager { get; }
-        public MethodManager MethodManager { get; }
-        public NamingScope GlobalScope { get; } = new NamingScope(new NameManager());
+        internal TypeManager TypeManager { get; }
+        internal MethodManager MethodManager { get; }
+        internal NamingScope GlobalScope { get; } = new NamingScope(new NameManager());
 
         public MethodCompilation EntryPoint { get; }
-        public SymbolResolver SymbolResolver { get; }
-        public ShaderResourceManager ShaderResourceManager { get; }
+        internal SymbolResolver SymbolResolver { get; }
+        internal ShaderResourceManager ShaderResourceManager { get; }
 
         public SemanticsGenerator SemanticsGenerator { get; }
 
-        public ShaderCompilation(
+        public string Code { get; private set; } = null!;
+
+        internal ShaderCompilation(
             ILSpyManager ilSpyManager,
             SymbolResolver symbolResolver,
             MethodInfo rootMethod,
@@ -32,7 +34,7 @@ namespace ShaderTranslator
             ShaderResourceManager = new ShaderResourceManager(TypeManager, SymbolResolver, GlobalScope);
         }
 
-        public string Compile()
+        internal void Compile()
         {
             while (MethodManager.CompileNextMethod()) ;
             while (TypeManager.CompileNextType()) ;
@@ -41,7 +43,7 @@ namespace ShaderTranslator
             TypeManager.Print(result);
             ShaderResourceManager.Print(result);
             MethodManager.Print(result);
-            return result.ToString();
+            Code = result.ToString();
         }
     }
 }

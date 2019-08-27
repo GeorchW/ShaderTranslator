@@ -16,10 +16,16 @@ namespace ShaderTranslator.Test
 
         protected void TestPixelShader(Delegate shaderFunction)
         {
-            string code = engine.Compile(shaderFunction.Target, shaderFunction.Method, 
-                new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.PixelShader), 
-                out string entryPoint);
-            SharpDX.D3DCompiler.ShaderBytecode.Compile(code, entryPoint, "ps_5_0");
+            var result = engine.Compile(shaderFunction.Target, shaderFunction.Method,
+                new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.PixelShader));
+            SharpDX.D3DCompiler.ShaderBytecode.Compile(result.Code, result.EntryPoint.Name, "ps_5_0");
+        }
+
+        protected void TestVertexShader(Delegate shaderFunction)
+        {
+            var result = engine.Compile(shaderFunction.Target, shaderFunction.Method,
+                new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.VertexShader));
+            SharpDX.D3DCompiler.ShaderBytecode.Compile(result.Code, result.EntryPoint.Name, "vs_5_0");
         }
     }
 }

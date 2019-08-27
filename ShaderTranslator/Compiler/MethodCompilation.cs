@@ -6,18 +6,18 @@ using System.Linq;
 
 namespace ShaderTranslator
 {
-    class SemanticsElement
+    public class SemanticsElement
     {
         public string? Semantics { get; set; } = null;
         public TargetType Type { get; }
         public SemanticsElement(TargetType type) => Type = type;
     }
-    class Parameter : SemanticsElement
+    public class Parameter : SemanticsElement
     {
         public string Name { get; }
         public Parameter(string name, TargetType type) : base(type) => Name = name;
     }
-    class MethodCompilation
+    public class MethodCompilation
     {
         public ShaderCompilation Parent { get; }
         public IMethod Method { get; }
@@ -37,7 +37,7 @@ namespace ShaderTranslator
         string BodyCode => bodyCode ?? throw new Exception($"Call {nameof(Compile)}() first!");
 
 
-        public MethodCompilation(ShaderCompilation parent, ILSpyManager ilSpyManager, IMethod method, string name, bool isRoot)
+        internal MethodCompilation(ShaderCompilation parent, ILSpyManager ilSpyManager, IMethod method, string name, bool isRoot)
         {
             this.Method = method;
             IsRoot = isRoot;
@@ -52,7 +52,7 @@ namespace ShaderTranslator
                 .Single();
         }
 
-        private void GatherSignature()
+        internal void GatherSignature()
         {
             returnType = new SemanticsElement(Parent.TypeManager.GetTargetType(Method.ReturnType));
             List<Parameter> parameters = new List<Parameter>();
