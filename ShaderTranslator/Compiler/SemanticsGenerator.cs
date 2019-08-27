@@ -1,15 +1,37 @@
 ﻿namespace ShaderTranslator
 {
+    /// <summary>
+    /// Controls which input semantics should be generated.
+    /// </summary>
     public enum InputSemanticsSettings
     {
+        /// <summary>
+        /// Does not generate any input semantics.
+        /// </summary>
         None,
+        /// <summary>
+        /// Generates TexCoord semantics for all fields without semantics.
+        /// </summary>
         TexCoord
     }
+    /// <summary>
+    /// Controls which output semantics should be generated.
+    /// </summary>
     public enum OutputSemanticsSettings
     {
+        /// <summary>
+        /// Does not generate any output semantics.
+        /// </summary>
         None,
-        SvTarget,
-        Texcoord
+        /// <summary>
+        /// Generates TexCoord semantics for all fields without semantics.
+        /// If the return type is primitive, it will get SV_Position semantics.
+        /// </summary>
+        VertexShader,
+        /// <summary>
+        /// Generates SV_Target semantics for all fields without semantics.
+        /// </summary>
+        PixelShader,
     }
     public class SemanticsGenerator
     {
@@ -54,15 +76,18 @@
         {
             string? semanticsBase = OutputSemanticsSettings switch
             {
-                OutputSemanticsSettings.SvTarget => "SV_Target",
-                OutputSemanticsSettings.Texcoord => "Texcoord",
+                OutputSemanticsSettings.PixelShader => "SV_Target",
+                OutputSemanticsSettings.VertexShader => "Texcoord",
                 _ => null
             };
             if (semanticsBase == null)
                 return;
             if (method.ReturnType.Semantics == null)
             {
-                if (method.ReturnType.Type.IsPrimitive)
+                if (OutputSemanticsSettings == OutputSemanticsSettings.VertexShader
+                    && method.ReturnType.Type.IsPrimitive)
+                    method.ReturnType.Semantics = "SV_Position";
+                else if (method.ReturnType.Type.IsPrimitive)
                     method.ReturnType.Semantics = semanticsBase + "0";
                 else if (method.ReturnType.Type is StructTargetType structTargetType)
                 {
