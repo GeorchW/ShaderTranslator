@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShaderTranslator.Test", "Sh
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShaderTranslator", "ShaderTranslator\ShaderTranslator.csproj", "{7F306386-65D3-43EC-8DBC-79CA8A4E5701}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShaderTranslator.Demo", "ShaderTranslator.Demo\ShaderTranslator.Demo.csproj", "{2915A10F-B149-44D5-ABC7-5FE7E78750BF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{7F306386-65D3-43EC-8DBC-79CA8A4E5701}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7F306386-65D3-43EC-8DBC-79CA8A4E5701}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7F306386-65D3-43EC-8DBC-79CA8A4E5701}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2915A10F-B149-44D5-ABC7-5FE7E78750BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2915A10F-B149-44D5-ABC7-5FE7E78750BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2915A10F-B149-44D5-ABC7-5FE7E78750BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2915A10F-B149-44D5-ABC7-5FE7E78750BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
