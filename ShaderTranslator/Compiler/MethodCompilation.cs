@@ -6,6 +6,17 @@ using System.Linq;
 
 namespace ShaderTranslator
 {
+    class SemanticsElement
+    {
+        public string? Semantics { get; set; } = null;
+        public TargetType Type { get; }
+        public SemanticsElement(TargetType type) => Type = type;
+    }
+    class Parameter : SemanticsElement
+    {
+        public string Name { get; }
+        public Parameter(string name, TargetType type) : base(type) => Name = name;
+    }
     class MethodCompilation
     {
         public ShaderCompilation Parent { get; }
@@ -13,13 +24,17 @@ namespace ShaderTranslator
         public string Name { get; }
         public bool IsRoot { get; }
 
-        IndentedStringBuilder codeBuilder = new IndentedStringBuilder();
         NamingScope scope;
 
         MethodDeclaration declaration;
 
-        string? code = null;
-        public string Code => code ?? throw new Exception("Need to compile first!");
+        SemanticsElement? returnType;
+        public SemanticsElement ReturnType => returnType ?? throw new Exception($"Call {nameof(GatherSignature)}() first!");
+        Parameter[]? parameters = null;
+        public IReadOnlyList<Parameter> Parameters => parameters ?? throw new Exception($"Call {nameof(GatherSignature)}() first!");
+
+        string? bodyCode;
+        string BodyCode => bodyCode ?? throw new Exception($"Call {nameof(Compile)}() first!");
 
 
         public MethodCompilation(ShaderCompilation parent, ILSpyManager ilSpyManager, IMethod method, string name, bool isRoot)
@@ -37,26 +52,15 @@ namespace ShaderTranslator
                 .Single();
         }
 
-        public void Compile()
+        private void GatherSignature()
         {
-            WriteMethodSignature();
-            WriteMethodBody();
-            code = codeBuilder.ToString();
-        }
-
-        Dictionary<int, string> parameters = new Dictionary<int, string>();
-
-        void WriteMethodSignature()
-        {
-            codeBuilder.Write($"{Parent.TypeManager.GetTypeString(Method.ReturnType)} {Name}(");
-
-            bool isFirst = true;
+            returnType = new SemanticsElement(Parent.TypeManager.GetTargetType(Method.ReturnType));
+            List<Parameter> parameters = new List<Parameter>();
             if (!Method.IsStatic)
             {
                 //AddParameter(method.DeclaringType, "this", -1);
             }
             int index = 0;
-            int texCoordIndex = 0;
             foreach (var param in Method.Parameters)
             {
                 AddParameter(param.Type, scope.GetFreeName(param.Name), index);
@@ -64,42 +68,72 @@ namespace ShaderTranslator
             }
             void AddParameter(IType type, string name, int index)
             {
+                parameters.Add(new Parameter(name, Parent.TypeManager.GetTargetType(type)));
+                parameterResolve.Add(index, name);
+            }
+            this.parameters = parameters.ToArray();
+        }
+
+        internal void Compile()
+        {
+            //WriteMethodSignature(codeBuilder);
+            //WriteMethodBody(codeBuilder);
+
+            GatherSignature();
+            WriteMethodBody();
+        }
+
+        internal string GetCode() => WriteMethodSignature() + BodyCode;
+
+        Dictionary<int, string> parameterResolve = new Dictionary<int, string>();
+
+        string WriteMethodSignature()
+        {
+            IndentedStringBuilder codeBuilder = new IndentedStringBuilder();
+            codeBuilder.Write($"{ReturnType.Type.Name} {Name}(");
+
+            bool isFirst = true;
+            foreach (var param in Parameters)
+            {
                 if (isFirst) isFirst = false;
                 else codeBuilder.Write(", ");
 
-                codeBuilder.Write(Parent.TypeManager.GetTypeString(type));
+                codeBuilder.Write(param.Type.Name);
                 codeBuilder.Write(" ");
-                codeBuilder.Write(name);
+                codeBuilder.Write(param.Name);
 
-                if (IsRoot)
+                if (param.Semantics != null)
                 {
-                    codeBuilder.Write(" : TEXCOORD");
-                    codeBuilder.Write(texCoordIndex);
+                    codeBuilder.Write(" : ");
+                    codeBuilder.Write(param.Semantics);
                 }
-
-                parameters.Add(index, name);
             }
             codeBuilder.Write(")");
-            if(IsRoot)
+            if (ReturnType.Semantics != null)
             {
-                codeBuilder.Write(" : SV_Target0");
+                codeBuilder.Write(" : ");
+                codeBuilder.Write(ReturnType.Semantics);
             }
             codeBuilder.WriteLine();
+            return codeBuilder.ToString();
         }
 
         void WriteMethodBody()
         {
             if (!Method.HasBody)
                 throw new Exception("Method must have a body.");
+            IndentedStringBuilder codeBuilder = new IndentedStringBuilder();
 
             codeBuilder.WriteLine("{");
             codeBuilder.IncreaseIndent();
 
-            MethodBodyVisitor visitor = new MethodBodyVisitor(codeBuilder, this, scope, parameters);
+            MethodBodyVisitor visitor = new MethodBodyVisitor(codeBuilder, this, scope, parameterResolve);
             declaration.Body.AcceptVisitor(visitor);
 
             codeBuilder.DecreaseIndent();
             codeBuilder.WriteLine("}");
+
+            bodyCode = codeBuilder.ToString();
         }
     }
 }

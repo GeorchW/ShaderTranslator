@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System;
 
 namespace ShaderTranslator.Test
 {
@@ -21,7 +22,8 @@ namespace ShaderTranslator.Test
         public void BasicShaderCompilationWorks()
         {
             var engine = new CompileEngine(SymbolResolver.Default);
-            string result = engine.Compile<float, int>(SimpleDummyShader, out _);
+            Func<float, int> func = SimpleDummyShader;
+            string result = engine.Compile(func.Target, func.Method, new SemanticsGenerator(), out _);
         }
     }
 }

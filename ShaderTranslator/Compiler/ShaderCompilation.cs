@@ -12,12 +12,15 @@ namespace ShaderTranslator
 
         public MethodCompilation EntryPoint { get; }
         public SymbolResolver SymbolResolver { get; }
-        public ShaderResourceManager ShaderResourceManager { get; } 
+        public ShaderResourceManager ShaderResourceManager { get; }
+
+        public SemanticsGenerator SemanticsGenerator { get; }
 
         public ShaderCompilation(
-            ILSpyManager ilSpyManager, 
-            SymbolResolver symbolResolver, 
-            MethodInfo rootMethod)
+            ILSpyManager ilSpyManager,
+            SymbolResolver symbolResolver,
+            MethodInfo rootMethod,
+            SemanticsGenerator semanticsGenerator)
         {
             var decompiler = ilSpyManager.GetDecompiler(rootMethod.Module.Assembly);
             TypeManager = new TypeManager(decompiler.TypeSystem, symbolResolver.MathApi, GlobalScope);
@@ -25,6 +28,7 @@ namespace ShaderTranslator
             var entryPoint = decompiler.TypeSystem.MainModule.GetDefinition((MethodDefinitionHandle)rootMethod.GetEntityHandle());
             EntryPoint = MethodManager.Require(entryPoint, true);
             SymbolResolver = symbolResolver;
+            SemanticsGenerator = semanticsGenerator;
             ShaderResourceManager = new ShaderResourceManager(TypeManager, SymbolResolver, GlobalScope);
         }
 
@@ -32,6 +36,7 @@ namespace ShaderTranslator
         {
             while (MethodManager.CompileNextMethod()) ;
             while (TypeManager.CompileNextType()) ;
+            SemanticsGenerator.GenerateSemantics(EntryPoint);
             IndentedStringBuilder result = new IndentedStringBuilder();
             TypeManager.Print(result);
             ShaderResourceManager.Print(result);

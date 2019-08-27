@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ShaderTranslator.Test
 {
-    class TypeReferences:Base
+    class TypeReferences : Base
     {
         struct SomeStruct
         {
@@ -13,6 +13,6 @@ namespace ShaderTranslator.Test
             public int B;
         }
         [Test]
-        public void Stuff() => TestPixelShader((SomeStruct input) => input.A * input.B);
+        public void InputStruct() => TestPixelShader((SomeStruct input) => input.A * input.B);
     }
 }

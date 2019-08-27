@@ -57,7 +57,7 @@ namespace ShaderTranslator
         {
             if (!toBeVisited.TryDequeue(out var type))
                 return false;
-            type.Compile(this);
+            type.GatherFields(this);
             return true;
         }
 
@@ -65,102 +65,8 @@ namespace ShaderTranslator
         {
             foreach (var type in translatedTypes.Reverse<StructTargetType>())
             {
-                result.WriteLine(type.Code);
+                result.WriteLine(type.GetCode());
             }
-        }
-    }
-    public abstract class TargetType
-    {
-        public string Name { get; }
-        public bool IsPrimitive { get; }
-
-        protected TargetType(string name, bool isPrimitive)
-        {
-            Name = name;
-            IsPrimitive = isPrimitive;
-        }
-    }
-    public class PrimitiveTargetType : TargetType
-    {
-        public PrimitiveType PrimitiveType { get; }
-        public PrimitiveTargetType(PrimitiveType targetType)
-            : base(targetType.ToString(), true)
-        {
-            PrimitiveType = targetType;
-        }
-    }
-
-    public class StructTargetType : TargetType
-    {
-        public class Field
-        {
-            public TargetType Type { get; }
-            public string Name { get; }
-            public int? ArrayLength { get; }
-            public bool IsArray => ArrayLength != null;
-            public string? Semantics { get; }
-
-            public Field(TargetType type, string name, int? arrayLength, string? semantics)
-            {
-                Type = type;
-                Name = name;
-                ArrayLength = arrayLength;
-                Semantics = semantics;
-            }
-        }
-        string? code;
-        internal string Code => code ?? throw new Exception("Call Compile() first!");
-        IReadOnlyList<Field>? fields;
-        public IReadOnlyList<Field> Fields => fields ?? throw new Exception("Call Compile() first!");
-        public IType SourceType { get; }
-
-        internal StructTargetType(IType sourceType, TypeManager typeManager, string name)
-            : base(name, false)
-        {
-            SourceType = sourceType;
-        }
-
-        Field Convert(TypeManager typeManager, IField field)
-        {
-            var type = field.Type;
-            int? arrayLength = null;
-            if (type is ArrayType arrayType)
-            {
-                arrayLength = (int)field.GetAttributes()
-                    .Where(attr => attr.AttributeType.FullName == typeof(Syntax.ArrayLengthAttribute).FullName)
-                    .Single()
-                    .FixedArguments[0]
-                    .Value;
-                type = arrayType.ElementType;
-            }
-            return new Field(typeManager.GetTargetType(type), field.Name, arrayLength, null);
-        }
-
-        internal void Compile(TypeManager typeManager)
-        {
-            fields = SourceType.GetFields().Select(field => Convert(typeManager, field)).ToArray();
-
-            var codeBuilder = new IndentedStringBuilder();
-            codeBuilder.Write("struct ");
-            codeBuilder.WriteLine(Name);
-            codeBuilder.WriteLine("{");
-            codeBuilder.IncreaseIndent();
-            foreach (var field in Fields)
-            {
-                codeBuilder.Write(field.Type.Name);
-                codeBuilder.Write(" ");
-                codeBuilder.Write(field.Name);
-                if (field.ArrayLength is int length)
-                {
-                    codeBuilder.Write("[");
-                    codeBuilder.Write(length);
-                    codeBuilder.Write("]");
-                }
-                codeBuilder.WriteLine(";");
-            }
-            codeBuilder.DecreaseIndent();
-            codeBuilder.WriteLine("};");
-            code = codeBuilder.ToString();
         }
     }
 }

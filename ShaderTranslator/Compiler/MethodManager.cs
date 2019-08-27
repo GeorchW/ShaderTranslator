@@ -51,7 +51,7 @@ namespace ShaderTranslator
         {
             foreach (var str in methods.Reverse<MethodCompilation>())
             {
-                target.WriteLine(str.Code);
+                target.WriteLine(str.GetCode());
             }
         }
     }

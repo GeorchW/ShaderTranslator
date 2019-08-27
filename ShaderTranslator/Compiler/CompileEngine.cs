@@ -12,12 +12,9 @@ namespace ShaderTranslator
 
         public CompileEngine(SymbolResolver symbolResolver) => SymbolResolver = symbolResolver;
 
-        public string Compile<TIn, TOut>(Func<TIn, TOut> shader, out string entryPoint)
-            => Compile(shader.Target, shader.Method, out entryPoint);
-
-        public string Compile(object? obj, MethodInfo method, out string entryPoint)
+        public string Compile(object? obj, MethodInfo method, SemanticsGenerator semanticsGenerator, out string entryPoint)
         {
-            var compilation = new ShaderCompilation(ilSpyManager, SymbolResolver, method);
+            var compilation = new ShaderCompilation(ilSpyManager, SymbolResolver, method, semanticsGenerator);
             var result = compilation.Compile();
             entryPoint = compilation.EntryPoint.Name;
             return result;
