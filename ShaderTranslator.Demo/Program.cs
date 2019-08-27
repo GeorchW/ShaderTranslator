@@ -12,6 +12,12 @@ namespace ShaderTranslator.Demo
 {
     class Program
     {
+        struct VsOutput
+        {
+            public Vector2 TexCoord;
+            [SvPosition]
+            public Vector4 Position;
+        }
         static void Main(string[] args)
         {
             var form = new Form();
@@ -40,7 +46,7 @@ namespace ShaderTranslator.Demo
             var renderView = new RenderTargetView(device, backBuffer);
 
 
-            Func<Vector2, Vector4> vsMethod = (Vector2 input) => new Vector4(input, 0, 1);
+            Func<Vector2, VsOutput> vsMethod = (Vector2 input) => new VsOutput { Position = new Vector4(input, 0, 1), TexCoord = input };
             var vsBytecode = Compile(vsMethod, new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.VertexShader), "vs_5_0");
 
             var inputLayout = new InputLayout(device,
@@ -51,14 +57,18 @@ namespace ShaderTranslator.Demo
 
             var vs = new VertexShader(device, vsBytecode.Bytecode.Data);
 
-            Func<Vector4> psMethod = () => new Vector4(1, 0, 0, 1);
+            Func<Vector2, Vector4> psMethod = input => new Vector4(input * 2, 0, 1);
             var psBytecode = Compile(psMethod, new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.PixelShader), "ps_5_0");
             var ps = new PixelShader(device, psBytecode.Bytecode.Data);
 
             var vertexBuffer = Buffer.Create(device, BindFlags.VertexBuffer, new Vector2[] {
-                new Vector2(1, 1),
-                new Vector2(1, 0),
-                new Vector2(0, 1),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0),
+                new Vector2(0, 0.5f),
+
+                new Vector2(0.5f, 0),
+                new Vector2(0, 0),
+                new Vector2(0, 0.5f),
             });
 
             bool exit = false;
@@ -78,7 +88,7 @@ namespace ShaderTranslator.Demo
                 context.Rasterizer.SetViewport(0, 0, form.ClientSize.Width, form.ClientSize.Height);
                 context.OutputMerger.SetTargets(renderView);
 
-                context.Draw(3, 0);
+                context.Draw(6, 0);
 
                 swapChain.Present(1, 0);
                 Application.DoEvents();

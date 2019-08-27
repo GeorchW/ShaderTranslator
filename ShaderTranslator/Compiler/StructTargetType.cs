@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using ICSharpCode.Decompiler.TypeSystem;
 using System.Linq;
+using ShaderTranslator.Syntax;
 
 namespace ShaderTranslator
 {
@@ -46,7 +47,21 @@ namespace ShaderTranslator
                     .Value;
                 type = arrayType.ElementType;
             }
-            return new Field(typeManager.GetTargetType(type), field.Name, arrayLength, null);
+            string? semantics = null;
+            var semanticsAttribute = field.GetAttributes()
+                .Where(attr =>
+                    attr.AttributeType.GetAllBaseTypes()
+                    .Any(type => type.FullName == typeof(SemanticsAttribute).FullName))
+                .SingleOrDefault();
+            if(semanticsAttribute != null)
+            {
+                //TODO: It would be easier to have the actual object here.
+                if (semanticsAttribute.AttributeType.FullName == typeof(SvPositionAttribute).FullName)
+                    semantics = "SV_Position";
+                if (semanticsAttribute.AttributeType.FullName == typeof(SvTargetAttribute).FullName)
+                    semantics = "SV_Target" + semanticsAttribute.FixedArguments[0].Value;
+            }
+            return new Field(typeManager.GetTargetType(type), field.Name, arrayLength, semantics);
         }
         internal void GatherFields(TypeManager typeManager) => fields = SourceType.GetFields().Select(field => Convert(typeManager, field)).ToArray();
 
@@ -84,6 +99,8 @@ namespace ShaderTranslator
         {
             foreach (var field in Fields)
             {
+                if (field.Semantics != null)
+                    continue;
                 if (field.Type.IsPrimitive)
                 {
                     field.Semantics = semanticsBase + index;
