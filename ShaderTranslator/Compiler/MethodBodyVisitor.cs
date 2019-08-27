@@ -342,9 +342,30 @@ namespace ShaderTranslator
                     throw new NotImplementedException();
                 codeBuilder.Write(OperatorHelper.GetOperatorString(assignmentExpression.Operator));
                 assignmentExpression.Right.AcceptVisitor(this);
-                return;
             }
-            throw new NotImplementedException();
+            else if (assignmentExpression.Left is MemberReferenceExpression memberReference)
+            {
+                VisitMember(memberReference);
+                codeBuilder.Write(OperatorHelper.GetOperatorString(assignmentExpression.Operator));
+                assignmentExpression.Right.AcceptVisitor(this);
+                void VisitMember(MemberReferenceExpression memberReferenceExpression)
+                {
+                    if (memberReference.Target is MemberReferenceExpression childMemberReference)
+                        VisitMember(childMemberReference);
+                    else if (TryLocalAccess(memberReference.Target)) { }
+                    else
+                        throw new NotImplementedException();
+
+                    var memberResolveResult = memberReferenceExpression.Annotation<MemberResolveResult>();
+                    if (memberResolveResult.Member is IField field)
+                    {
+                        codeBuilder.Write(".");
+                        codeBuilder.Write(SymbolResolver.TryResolve(field)?.Name ?? field.Name);
+                    }
+                    else throw new NotImplementedException();
+                }
+            }
+            else throw new NotImplementedException();
         }
 
         public override void VisitUnaryOperatorExpression(UnaryOperatorExpression unaryOperatorExpression)
@@ -407,6 +428,14 @@ namespace ShaderTranslator
             if (!type.IsPrimitive)
                 throw new Exception("Constructors of non-primitive types aren't supported.");
             WriteCall(type.Name, objectCreateExpression.Arguments);
+        }
+
+        public override void VisitDefaultValueExpression(DefaultValueExpression defaultValueExpression)
+        {
+            codeBuilder.Write("(");
+            codeBuilder.Write(TypeManager.GetTypeString(defaultValueExpression.Annotation<ConstantResolveResult>().Type));
+            codeBuilder.Write(")");
+            codeBuilder.Write("0");
         }
     }
 }
