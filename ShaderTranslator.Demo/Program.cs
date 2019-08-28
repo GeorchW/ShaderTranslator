@@ -58,10 +58,7 @@ namespace ShaderTranslator.Demo
                 new Vector2(0.5f, 0.5f),
                 new Vector2(0.5f, 0),
                 new Vector2(0, 0.5f),
-
-                new Vector2(0.5f, 0),
                 new Vector2(0, 0),
-                new Vector2(0, 0.5f),
             });
 
             bool exit = false;
@@ -74,14 +71,14 @@ namespace ShaderTranslator.Demo
                 var context = device.ImmediateContext;
 
                 context.InputAssembler.InputLayout = inputLayout;
-                context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+                context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleStrip;
                 context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(vertexBuffer, 8, 0));
                 context.VertexShader.Set(vs);
                 context.PixelShader.Set(ps);
                 context.Rasterizer.SetViewport(0, 0, form.ClientSize.Width, form.ClientSize.Height);
                 context.OutputMerger.SetTargets(renderView);
 
-                context.Draw(6, 0);
+                context.Draw(4, 0);
 
                 swapChain.Present(1, 0);
                 Application.DoEvents();
