@@ -2,6 +2,7 @@
 using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 using Buffer = SharpDX.Direct3D11.Buffer;
 
@@ -21,6 +22,9 @@ namespace ShaderTranslator.Demo
             (vs, inputLayout, stride) = ShaderCompiler.CompileVertexShader(vertexShaderMethod, device);
             ps = ShaderCompiler.CompilePixelShader(pixelShaderMethod, device);
         }
+
+        public void Load<TIn, TMid>(Device device, Func<TIn, TMid> vertexShader, Func<TMid, Vector4> pixelShader)
+            => Load(device, (Delegate)vertexShader, (Delegate)pixelShader);
 
         public struct RenderContext : IDisposable
         {

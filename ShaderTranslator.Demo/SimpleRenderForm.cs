@@ -21,14 +21,14 @@ namespace ShaderTranslator.Demo
         public Device Device { get; }
         public RawColor4 ClearColor { get; } = new RawColor4(0.1f, 0.8f, 0.2f, 1);
 
-        public SimpleRenderForm()
+        public SimpleRenderForm(string text = "Demo")
         {
             form = new Form();
             form.ClientSize = new System.Drawing.Size(1600, 900);
             form.MinimizeBox = false;
             form.MaximizeBox = false;
             form.FormBorderStyle = FormBorderStyle.FixedSingle;
-            form.Text = "ShaderTranslator demo";
+            form.Text = text;
 
             SwapChainDescription swapChainDescription;
             swapChainDescription.BufferCount = 1;

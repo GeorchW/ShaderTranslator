@@ -25,35 +25,31 @@ namespace ShaderTranslator
 
         public ShaderResourceCompilation? Require(IVariable variable)
         {
-            if (seenFields.Add(variable))
-            {
-                if (shaderResources.TryGetValue(variable, out var result))
-                    return result;
-                IEnumerable<IAttribute> attributes;
-                if (variable is IField field)
-                    attributes = field.GetAttributes();
-                else if (variable is IParameter parameter)
-                    attributes = parameter.GetAttributes();
-                else
-                    return null;
-
-                if (!attributes.TryGetAttribute(typeof(ShaderResourceAttribute), out var attr))
-                    return null;
-
-                string name = globalScope.GetFreeName(variable.Name);
-                if (symbolResolver.IsTextureType(variable.Type))
-                {
-                    string samplerName = globalScope.GetFreeName($"{variable.Name}_Sampler");
-                    result = new TextureCompilation(variable, attr, name, samplerName);
-                }
-                else
-                {
-                    result = new ConstantBufferCompilation(variable, attr, name);
-                }
-                shaderResources.Add(variable, result);
+            if (shaderResources.TryGetValue(variable, out var result))
                 return result;
+            IEnumerable<IAttribute> attributes;
+            if (variable is IField field)
+                attributes = field.GetAttributes();
+            else if (variable is IParameter parameter)
+                attributes = parameter.GetAttributes();
+            else
+                return null;
+
+            if (!attributes.TryGetAttribute(typeof(ShaderResourceAttribute), out var attr))
+                return null;
+
+            string name = globalScope.GetFreeName(variable.Name);
+            if (symbolResolver.IsTextureType(variable.Type))
+            {
+                string samplerName = globalScope.GetFreeName($"{variable.Name}_Sampler");
+                result = new TextureCompilation(variable, attr, name, samplerName);
             }
-            return null;
+            else
+            {
+                result = new ConstantBufferCompilation(variable, attr, name, typeManager);
+            }
+            shaderResources.Add(variable, result);
+            return result;
         }
 
         public void Print(IndentedStringBuilder codeBuilder)
@@ -113,8 +109,10 @@ namespace ShaderTranslator
     }
     class ConstantBufferCompilation : ShaderResourceCompilation
     {
-        public ConstantBufferCompilation(IVariable variable, IAttribute attribute, string name) : base(variable, attribute, name)
+        public TargetType TargetType { get; }
+        public ConstantBufferCompilation(IVariable variable, IAttribute attribute, string name, TypeManager typeManager) : base(variable, attribute, name)
         {
+            TargetType = typeManager.GetTargetType(variable.Type);
         }
 
 
@@ -128,7 +126,7 @@ namespace ShaderTranslator
             codeBuilder.WriteLine("{");
             codeBuilder.IncreaseIndent();
 
-            codeBuilder.Write(typeManager.GetTypeString(Variable.Type));
+            codeBuilder.Write(TargetType.Name);
             codeBuilder.Write(" ");
             codeBuilder.Write(Name);
             codeBuilder.WriteLine(";");

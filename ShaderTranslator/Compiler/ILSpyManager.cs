@@ -26,12 +26,12 @@ namespace ShaderTranslator
             settings.ArrayInitializers = false;
             settings.AssumeArrayLengthFitsIntoInt32 = true;
             settings.AutomaticProperties = true;
-            settings.MakeAssignmentExpressions = false;
+            settings.MakeAssignmentExpressions = true;
             settings.ShowXmlDocumentation = false;
             settings.SwitchStatementOnString = false;
             settings.UsingDeclarations = false;
             settings.ForEachStatement = false;
-            settings.IntroduceIncrementAndDecrement = false;
+            settings.IntroduceIncrementAndDecrement = true;
         }
 
         public CSharpDecompiler GetDecompiler(Assembly assembly)

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ShaderTranslator.Demo": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

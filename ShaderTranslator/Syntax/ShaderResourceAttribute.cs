@@ -5,7 +5,7 @@ using System.Text;
 namespace ShaderTranslator.Syntax
 {
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Field, AllowMultiple = false)]
-    class ShaderResourceAttribute : Attribute
+    public class ShaderResourceAttribute : Attribute
     {
         public int Set { get; }
         public int Slot { get; }
