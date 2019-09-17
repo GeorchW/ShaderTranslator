@@ -1,4 +1,5 @@
 ﻿using ICSharpCode.Decompiler.CSharp.Syntax;
+using ICSharpCode.Decompiler.Semantics;
 using ICSharpCode.Decompiler.TypeSystem;
 using ShaderTranslator.Syntax;
 using System;
@@ -43,8 +44,7 @@ namespace ShaderTranslator
                 string name = globalScope.GetFreeName(variable.Name);
                 if (symbolResolver.IsTextureType(variable.Type))
                 {
-                    string samplerName = globalScope.GetFreeName($"{variable.Name}_Sampler");
-                    result = new TextureCompilation(variable, attr, name, samplerName);
+                    result = new TextureCompilation(variable, attr, name);
                 }
                 else
                 {
@@ -70,11 +70,8 @@ namespace ShaderTranslator
     }
     class TextureCompilation : ShaderResourceCompilation
     {
-        public string SamplerName { get; }
-
-        public TextureCompilation(IVariable variable, IAttribute attribute, string name, string samplerName) : base(variable, attribute, name)
+        public TextureCompilation(IVariable variable, IAttribute attribute, string name) : base(variable, attribute, name)
         {
-            SamplerName = samplerName;
         }
 
         public void InvokeSampleCall(
@@ -82,13 +79,19 @@ namespace ShaderTranslator
             InvocationExpression invocationExpression,
             MethodBodyVisitor astVisitor)
         {
-            codeBuilder.Write(Name);
-            codeBuilder.Write(".");
             if (!(invocationExpression.Target is MemberReferenceExpression mem))
                 throw new Exception();
-            codeBuilder.Write(mem.MemberName);
+
+            string methodName = mem.MemberName;
+            var method = (invocationExpression.Annotation<InvocationResolveResult>()?.Member as IMethod);
+            if (method != null && method.GetAttributes().TryGetAttribute(typeof(GlslAttribute), out var attribute))
+            {
+                methodName = (string)attribute.FixedArguments[0].Value;
+            }
+
+            codeBuilder.Write(methodName);
             codeBuilder.Write("(");
-            codeBuilder.Write(SamplerName);
+            codeBuilder.Write(Name);
             foreach (var arg in invocationExpression.Arguments)
             {
                 codeBuilder.Write(", ");
