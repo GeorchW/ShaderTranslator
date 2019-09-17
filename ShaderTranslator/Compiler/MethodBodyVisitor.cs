@@ -177,7 +177,8 @@ namespace ShaderTranslator
                 variableInitializer.Annotation<ILVariableResolveResult>().Variable.IndexInFunction,
                 variableName);
             codeBuilder.Write(variableName);
-            if (variableInitializer.Initializer != null)
+            if (variableInitializer.Initializer != null
+                && !(variableInitializer.Initializer is DefaultValueExpression))
             {
                 codeBuilder.Write(" = ");
                 variableInitializer.Initializer.AcceptVisitor(this);
@@ -383,10 +384,10 @@ namespace ShaderTranslator
             var resolveResult = castExpression.Annotation<ConversionResolveResult>();
             if (resolveResult.Conversion.IsUserDefined)
                 throw new Exception("Custom cast operators are not supported yet");
-            codeBuilder.Write("(");
             codeBuilder.Write(TypeManager.GetTypeString(resolveResult.Type));
-            codeBuilder.Write(")");
+            codeBuilder.Write("(");
             castExpression.Expression.AcceptVisitor(this);
+            codeBuilder.Write(")");
         }
 
         public override void VisitMemberReferenceExpression(MemberReferenceExpression memberReferenceExpression)

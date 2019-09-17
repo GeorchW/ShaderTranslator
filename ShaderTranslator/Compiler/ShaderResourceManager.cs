@@ -101,9 +101,9 @@ namespace ShaderTranslator
             codeBuilder.Write("layout(location = ");
             codeBuilder.Write(Slot);
             codeBuilder.Write(")");
-            codeBuilder.Write("sampler2D ");
+            codeBuilder.Write(" uniform sampler2D ");
             codeBuilder.Write(Name);
-            codeBuilder.Write(";");
+            codeBuilder.WriteLine(";");
         }
     }
     class ConstantBufferCompilation : ShaderResourceCompilation
@@ -117,14 +117,19 @@ namespace ShaderTranslator
         {
             codeBuilder.Write("layout(std140, binding = ");
             codeBuilder.Write(Slot);
-            codeBuilder.Write(")");
+            codeBuilder.Write(") uniform ");
+            //TODO: requires a proper name
+            codeBuilder.Write(Name + "_asdfqwetr_constant_buffer");
             codeBuilder.WriteLine("{");
             codeBuilder.IncreaseIndent();
 
-            codeBuilder.Write(this.Variable.Type.Name);
+            codeBuilder.Write(typeManager.GetTypeString(this.Variable.Type));
             codeBuilder.Write(" ");
             codeBuilder.Write(Name);
             codeBuilder.WriteLine(";");
+
+            codeBuilder.DecreaseIndent();
+            codeBuilder.WriteLine("};");
         }
     }
 

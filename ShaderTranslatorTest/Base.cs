@@ -23,7 +23,6 @@ namespace ShaderTranslator.Test
                 new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.PixelShader));
 
             StringBuilder shader = new StringBuilder();
-            shader.AppendLine("");
             shader.AppendLine("#version 450");
             shader.AppendLine(result.Code);
             foreach (var param in result.EntryPoint.Parameters)
@@ -40,7 +39,7 @@ namespace ShaderTranslator.Test
             {
                 foreach (var field in ((StructTargetType)result.EntryPoint.ReturnType.Type).Fields)
                 {
-                    shader.AppendLine($"out {field.Type} {field.Name};");
+                    shader.AppendLine($"out {field.Type.Name} {field.Name};");
                 }
             }
             shader.AppendLine("void main()");
