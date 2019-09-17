@@ -101,19 +101,8 @@ namespace ShaderTranslator
                 codeBuilder.Write(param.Type.Name);
                 codeBuilder.Write(" ");
                 codeBuilder.Write(param.Name);
-
-                if (param.Semantics != null)
-                {
-                    codeBuilder.Write(" : ");
-                    codeBuilder.Write(param.Semantics);
-                }
             }
             codeBuilder.Write(")");
-            if (ReturnType.Semantics != null)
-            {
-                codeBuilder.Write(" : ");
-                codeBuilder.Write(ReturnType.Semantics);
-            }
             codeBuilder.WriteLine();
             return codeBuilder.ToString();
         }

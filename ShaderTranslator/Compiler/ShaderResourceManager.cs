@@ -98,17 +98,12 @@ namespace ShaderTranslator
         }
         public override void Print(IndentedStringBuilder codeBuilder, TypeManager typeManager)
         {
-            codeBuilder.Write("Texture2D ");
+            codeBuilder.Write("layout(location = ");
+            codeBuilder.Write(Slot);
+            codeBuilder.Write(")");
+            codeBuilder.Write("sampler2D ");
             codeBuilder.Write(Name);
-            codeBuilder.Write(" : register(t");
-            codeBuilder.Write(Slot);
-            codeBuilder.Write(");");
-
-            codeBuilder.Write("SamplerState ");
-            codeBuilder.Write(SamplerName);
-            codeBuilder.Write(" : register(s");
-            codeBuilder.Write(Slot);
-            codeBuilder.Write(");");
+            codeBuilder.Write(";");
         }
     }
     class ConstantBufferCompilation : ShaderResourceCompilation
@@ -120,21 +115,16 @@ namespace ShaderTranslator
 
         public override void Print(IndentedStringBuilder codeBuilder, TypeManager typeManager)
         {
-            codeBuilder.Write("cbuffer ");
-            codeBuilder.WriteLine(Name);
-            codeBuilder.Write(" : register(b");
+            codeBuilder.Write("layout(std140, binding = ");
             codeBuilder.Write(Slot);
             codeBuilder.Write(")");
             codeBuilder.WriteLine("{");
             codeBuilder.IncreaseIndent();
 
-            codeBuilder.Write(typeManager.GetTypeString(Variable.Type));
+            codeBuilder.Write(this.Variable.Type.Name);
             codeBuilder.Write(" ");
             codeBuilder.Write(Name);
             codeBuilder.WriteLine(";");
-
-            codeBuilder.DecreaseIndent();
-            codeBuilder.WriteLine("}");
         }
     }
 

@@ -75,19 +75,14 @@ namespace ShaderTranslator
             foreach (var field in Fields)
             {
                 codeBuilder.Write(field.Type.Name);
-                codeBuilder.Write(" ");
-                codeBuilder.Write(field.Name);
                 if (field.ArrayLength is int length)
                 {
                     codeBuilder.Write("[");
                     codeBuilder.Write(length);
                     codeBuilder.Write("]");
                 }
-                if(field.Semantics != null)
-                {
-                    codeBuilder.Write(" : ");
-                    codeBuilder.Write(field.Semantics);
-                }
+                codeBuilder.Write(" ");
+                codeBuilder.Write(field.Name);
                 codeBuilder.WriteLine(";");
             }
             codeBuilder.DecreaseIndent();

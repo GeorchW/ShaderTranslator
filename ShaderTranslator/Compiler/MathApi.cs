@@ -54,22 +54,38 @@ namespace ShaderTranslator
 
         public override string ToString()
         {
-            string prefix = ComponentType switch
+            if (Length == VectorLength.Scalar)
             {
-                ComponentType.Float => "float",
-                ComponentType.Int => "int",
-                _ => throw new InvalidOperationException()
-            };
-            string postfix = Length switch
+                return ComponentType switch
+                {
+                    ComponentType.Float => "float",
+                    ComponentType.Int => "int",
+                    _ => throw new NotImplementedException()
+                };
+            }
+            else if (Length.IsVector())
             {
-                VectorLength.Scalar => "",
-                VectorLength.Vector2 => "2",
-                VectorLength.Vector3 => "3",
-                VectorLength.Vector4 => "4",
-                VectorLength.Matrix => "4x4",
-                _ => throw new InvalidOperationException()
-            };
-            return prefix + postfix;
+                string prefix = ComponentType switch
+                {
+                    ComponentType.Float => "vec",
+                    ComponentType.Int => "ivec",
+                    _ => throw new InvalidOperationException()
+                };
+                string postfix = Length switch
+                {
+                    VectorLength.Scalar => "",
+                    VectorLength.Vector2 => "2",
+                    VectorLength.Vector3 => "3",
+                    VectorLength.Vector4 => "4",
+                    _ => throw new InvalidOperationException()
+                };
+                return prefix + postfix;
+            }
+            else if (Length == VectorLength.Matrix)
+            {
+                return "mat4x4";
+            }
+            else throw new NotImplementedException();
         }
 
         public override bool Equals(object? obj) => obj is PrimitiveType type && Equals(type);

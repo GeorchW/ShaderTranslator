@@ -29,7 +29,9 @@ namespace ShaderTranslator
             "tbuffer", "technique", "technique10", "technique11", "texture", "Texture1D", "Texture1DArray", "Texture2D", "Texture2DArray", "Texture2DMS", "Texture2DMSArray", "Texture3D", "TextureCube", "TextureCubeArray", "true", "typedef", "triangle", "triangleadj", "TriangleStream",
             "uint", "uniform", "unorm", "unsigned",
             "vector", "vertexfragment", "VertexShader", "void", "volatile",
-            "while"
+            "while",
+
+            "vec2", "vec3", "vec4", "input", "output"
         };
 
         public bool IsKeyword(string name) => keywords.Contains(name);

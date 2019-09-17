@@ -293,11 +293,11 @@ namespace ShaderTranslator
 
         public override void VisitWhileStatement(WhileStatement whileStatement)
         {
-            if (unrollNextLoop)
-            {
-                codeBuilder.WriteLine("[unroll]");
-                unrollNextLoop = false;
-            }
+            //if (unrollNextLoop)
+            //{
+            //    codeBuilder.WriteLine("[unroll]");
+            //    unrollNextLoop = false;
+            //}
 
             codeBuilder.Write("while (");
             whileStatement.Condition.AcceptVisitor(this);
@@ -427,12 +427,12 @@ namespace ShaderTranslator
             WriteCall(type.Name, objectCreateExpression.Arguments);
         }
 
-        public override void VisitDefaultValueExpression(DefaultValueExpression defaultValueExpression)
-        {
-            codeBuilder.Write("(");
-            codeBuilder.Write(TypeManager.GetTypeString(defaultValueExpression.Annotation<ConstantResolveResult>().Type));
-            codeBuilder.Write(")");
-            codeBuilder.Write("0");
-        }
+        //public override void VisitDefaultValueExpression(DefaultValueExpression defaultValueExpression)
+        //{
+        //    codeBuilder.Write("(");
+        //    codeBuilder.Write(TypeManager.GetTypeString(defaultValueExpression.Annotation<ConstantResolveResult>().Type));
+        //    codeBuilder.Write(")");
+        //    codeBuilder.Write("0");
+        //}
     }
 }
