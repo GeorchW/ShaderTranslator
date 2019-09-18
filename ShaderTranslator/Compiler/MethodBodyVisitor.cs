@@ -49,7 +49,7 @@ namespace ShaderTranslator
                 var member = invocation.Annotation<InvocationResolveResult>().Member;
                 if (member.FullNameIs("ShaderTranslator.Syntax.ShaderMethods", "Unroll"))
                 {
-                    unrollNextLoop = true;
+                    //unrollNextLoop = true;
                     return;
                 }
                 else if (member.FullNameIs("ShaderTranslator.Syntax.ShaderMethods", "Discard"))
@@ -250,8 +250,6 @@ namespace ShaderTranslator
                 codeBuilder.WriteLine(";");
             }
         }
-
-        bool unrollNextLoop = false;
 
         public override void VisitInvocationExpression(InvocationExpression invocationExpression)
         {

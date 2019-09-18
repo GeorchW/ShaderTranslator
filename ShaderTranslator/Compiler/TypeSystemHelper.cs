@@ -50,7 +50,8 @@ namespace ShaderTranslator
             attribute = null;
             return false;
         }
-        public static string GetName(this IEnumerable<IAttribute> attributes, string defaultName)
+        [return: NotNullIfNotNull("defaultName")]
+        public static string? GetName(this IEnumerable<IAttribute> attributes, string? defaultName)
         {
             if (attributes.TryGetAttribute(typeof(GlslAttribute), out var attribute))
             {

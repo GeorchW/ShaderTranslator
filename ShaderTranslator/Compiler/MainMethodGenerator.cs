@@ -19,7 +19,7 @@ namespace ShaderTranslator
             {
                 foreach (var field in returnStruct.Fields)
                 {
-                    string name = field.Name;
+                    string name = field.SemanticName ?? field.Name;
                     if (!name.StartsWith("gl_"))
                     {
                         codeBuilder.WriteLine($"out {field.Type.Name} {field.Name};");
@@ -73,7 +73,7 @@ namespace ShaderTranslator
                 codeBuilder.WriteLine($"{entryPoint.ReturnType.Name} result = {callEntryPoint};");
                 foreach (var field in ((StructTargetType)entryPoint.ReturnType).Fields)
                 {
-                    codeBuilder.Write($"{field.Name} = result.{field.Name};");
+                    codeBuilder.Write($"{field.SemanticName ?? field.Name} = result.{field.Name};");
                 }
             }
             codeBuilder.DecreaseIndent();

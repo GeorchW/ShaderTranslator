@@ -29,7 +29,7 @@ namespace ShaderTranslator
 
         MethodDeclaration declaration;
 
-        TargetType returnType;
+        TargetType? returnType;
         public TargetType ReturnType => returnType ?? throw new Exception($"Call {nameof(GatherSignature)}() first!");
         Parameter[]? parameters = null;
         public IReadOnlyList<Parameter> Parameters => parameters ?? throw new Exception($"Call {nameof(GatherSignature)}() first!");
@@ -64,7 +64,7 @@ namespace ShaderTranslator
             int index = 0;
             foreach (var param in Method.Parameters)
             {
-                string name = param.GetAttributes().GetName(param.Name);
+                string name = param.GetAttributes().GetName(param.Name)!;
                 AddParameter(param.Type, scope.GetFreeName(name), index);
                 index++;
             }

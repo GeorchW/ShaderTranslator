@@ -15,13 +15,15 @@ namespace ShaderTranslator
             public int? ArrayLength { get; }
             public bool IsArray => ArrayLength != null;
             public IField SourceField { get; set; }
+            public string? SemanticName { get; }
 
-            public Field(TargetType type, string name, int? arrayLength, IField sourceField)
+            public Field(TargetType type, string name, int? arrayLength, IField sourceField, string? semanticName)
             {
                 Type = type;
                 Name = name;
                 ArrayLength = arrayLength;
                 SourceField = sourceField;
+                SemanticName = semanticName;
             }
         }
         Field[]? fields;
@@ -45,7 +47,7 @@ namespace ShaderTranslator
                 arrayLength = (int)arrayLengthAttribute.FixedArguments[0].Value;
                 type = arrayType.ElementType;
             }
-            return new Field(typeManager.GetTargetType(type), field.GetAttributes().GetName(field.Name), arrayLength, field);
+            return new Field(typeManager.GetTargetType(type), field.Name, arrayLength, field, field.GetAttributes().GetName(null));
         }
         internal void GatherFields(TypeManager typeManager) => fields = SourceType.GetFields().Select(field => Convert(typeManager, field)).ToArray();
 
