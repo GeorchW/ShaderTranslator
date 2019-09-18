@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using OpenTK.Graphics.OpenGL4;
 using System.Diagnostics;
 using System.Linq;
 
@@ -18,7 +17,7 @@ namespace ShaderTranslator.Test
         protected void TestPixelShader<TIn1, TIn2, TOut>(Func<TIn1, TIn2, TOut> func) => TestPixelShader((Delegate)func);
 
 
-        protected void TestPixelShader(Delegate shaderFunction) => TestShader(shaderFunction, ShaderType.PixelShader);
+        protected void TestPixelShader(Delegate shaderFunction) => TestShader(shaderFunction, ShaderType.FragmentShader);
         protected void TestVertexShader(Delegate shaderFunction) => TestShader(shaderFunction, ShaderType.VertexShader);
         protected void TestShader(Delegate shaderFunction, ShaderType shaderType)
         {
@@ -28,7 +27,7 @@ namespace ShaderTranslator.Test
                 "--stdin " +
                 shaderType switch
                 {
-                    ShaderType.PixelShader => "-S frag ",
+                    ShaderType.FragmentShader => "-S frag ",
                     ShaderType.VertexShader => "-S vert ",
                     _ => throw new NotImplementedException()
                 } +

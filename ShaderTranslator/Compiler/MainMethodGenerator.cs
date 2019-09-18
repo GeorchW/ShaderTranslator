@@ -10,6 +10,9 @@ namespace ShaderTranslator
     {
         public static string GenerateMainMethod(MethodCompilation entryPoint, IndentedStringBuilder codeBuilder, ShaderType shaderType)
         {
+            int outputLocationIndex = 1;
+            int inputLocationIndex = 1;
+
             if (entryPoint.Parameters.Count == 1
                 && entryPoint.Parameters[0].Type is StructTargetType structInput)
             {
@@ -18,7 +21,7 @@ namespace ShaderTranslator
                     string fieldName = field.SemanticName ?? field.Name;
                     if (!fieldName.StartsWith("gl_"))
                     {
-                        codeBuilder.WriteLine($"in {field.Type.Name} {fieldName};");
+                        codeBuilder.WriteLine($"layout(location = {inputLocationIndex++}) in {field.Type.Name} {fieldName};");
                     }
                 }
             }
@@ -26,7 +29,7 @@ namespace ShaderTranslator
             {
                 foreach (var param in entryPoint.Parameters)
                 {
-                    codeBuilder.WriteLine($"in {param.Type.Name} {param.Name};");
+                    codeBuilder.WriteLine($"layout(location = {inputLocationIndex++}) in {param.Type.Name} {param.Name};");
                 }
             }
             string? singleReturnName = null;
@@ -37,7 +40,7 @@ namespace ShaderTranslator
                     string name = field.SemanticName ?? field.Name;
                     if (!name.StartsWith("gl_"))
                     {
-                        codeBuilder.WriteLine($"out {field.Type.Name} {field.Name};");
+                        codeBuilder.WriteLine($"layout(location = {outputLocationIndex++}) out {field.Type.Name} {field.Name};");
                     }
                 }
             }
@@ -48,11 +51,7 @@ namespace ShaderTranslator
                     singleReturnName = (string)attribute.FixedArguments[0].Value;
                     if (!singleReturnName.StartsWith("gl_"))
                     {
-                        codeBuilder.Write("out ");
-                        codeBuilder.Write(entryPoint.ReturnType.Name);
-                        codeBuilder.Write(" ");
-                        codeBuilder.Write(singleReturnName);
-                        codeBuilder.WriteLine(";");
+                        codeBuilder.Write($"layout(location = {outputLocationIndex++}) out {entryPoint.ReturnType.Name} {singleReturnName};");
                     }
                 }
                 else
@@ -61,16 +60,12 @@ namespace ShaderTranslator
                     (singleReturnName, generateVariable) = shaderType switch
                     {
                         ShaderType.VertexShader => ("gl_Position", false),
-                        ShaderType.PixelShader => ("FragColor", true),
+                        ShaderType.FragmentShader => ("gl_FragColor", false),
                         _ => throw new NotImplementedException()
                     };
                     if (generateVariable)
                     {
-                        codeBuilder.Write("out ");
-                        codeBuilder.Write(entryPoint.ReturnType.Name);
-                        codeBuilder.Write(" ");
-                        codeBuilder.Write(singleReturnName);
-                        codeBuilder.WriteLine(";");
+                        codeBuilder.Write($"layout(location = {outputLocationIndex++}) out {entryPoint.ReturnType.Name} {singleReturnName};");
                     }
                 }
             }

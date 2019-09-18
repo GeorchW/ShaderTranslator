@@ -23,7 +23,7 @@ namespace ShaderTranslator.Test
         {
             var engine = new CompileEngine(SymbolResolver.Default);
             Func<float, int> func = SimpleDummyShader;
-            var result = engine.Compile(func.Target, func.Method, ShaderType.PixelShader);
+            var result = engine.Compile(func.Target, func.Method, ShaderType.FragmentShader);
         }
     }
 }

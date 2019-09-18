@@ -1,18 +1,16 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SharpDX.D3DCompiler" Version="4.2.0" />
-    <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\ShaderTranslator\ShaderTranslator.csproj" />
+    <PackageReference Include="OpenTK" Version="3.1.0" />
+    <PackageReference Include="SDL2-CS.dll" Version="2.0.0" />
+    <PackageReference Include="sdl2.runtimes" Version="2.0.0" />
   </ItemGroup>
 
 </Project>

@@ -1,52 +1,58 @@
-﻿using SharpDX.Direct3D;
-using SharpDX.Direct3D11;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Buffer = SharpDX.Direct3D11.Buffer;
+
+using OpenTK.Graphics.OpenGL4;
 
 namespace ShaderTranslator.Demo
 {
+    using PrimitiveType = OpenTK.Graphics.OpenGL4.PrimitiveType;
+
     class SimpleRenderer
     {
-        InputLayout inputLayout;
-        VertexShader vs;
-        PixelShader ps;
-        int stride;
+        int program;
 
-        public PrimitiveTopology PrimitiveTopology { get; set; } = PrimitiveTopology.TriangleList;
+        public PrimitiveType PrimitiveType { get; set; } = PrimitiveType.Triangles;
 
-        public void Load(Device device, Delegate vertexShaderMethod, Delegate pixelShaderMethod)
+        public void Load(Delegate vertexShaderMethod, Delegate pixelShaderMethod)
         {
-            (vs, inputLayout, stride) = ShaderCompiler.CompileVertexShader(vertexShaderMethod, device);
-            ps = ShaderCompiler.CompilePixelShader(pixelShaderMethod, device);
+            int vs = ShaderCompiler.CompileVertexShader(vertexShaderMethod);
+            int fs = ShaderCompiler.CompileFragmentShader(pixelShaderMethod);
+            program = GL.CreateProgram();
+            GL.AttachShader(program, vs);
+            GL.AttachShader(program, fs);
+            GL.LinkProgram(program);
+            GL.GetProgram(program, GetProgramParameterName.LinkStatus, out int success);
+            if (success == 0)
+            {
+                string log = GL.GetProgramInfoLog(program);
+                Console.WriteLine(log);
+                throw new Exception(log);
+            }
         }
 
         public struct RenderContext : IDisposable
         {
-            DeviceContext context;
             SimpleRenderer parent;
-            internal RenderContext(DeviceContext context, SimpleRenderer parent)
+            internal RenderContext(SimpleRenderer parent)
             {
-                this.context = context;
                 this.parent = parent;
             }
-            public void Draw(Buffer vertexBuffer)
+            public void Draw(int vao, int count)
             {
-                context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(vertexBuffer, parent.stride, 0));
-                context.Draw(vertexBuffer.Description.SizeInBytes / parent.stride, 0);
+                GL.BindVertexArray(vao);
+                GL.DrawArrays(parent.PrimitiveType, 0, count);
             }
             void IDisposable.Dispose()
-            { }
+            {
+                GL.UseProgram(0);
+            }
         }
 
-        public RenderContext Begin(DeviceContext context)
+        public RenderContext Begin()
         {
-            context.InputAssembler.InputLayout = inputLayout;
-            context.InputAssembler.PrimitiveTopology = PrimitiveTopology;
-            context.VertexShader.Set(vs);
-            context.PixelShader.Set(ps);
-            return new RenderContext(context, this);
+            GL.UseProgram(program);
+            return new RenderContext(this);
         }
     }
 }
