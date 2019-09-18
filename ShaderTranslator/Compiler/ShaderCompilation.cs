@@ -12,7 +12,7 @@ namespace ShaderTranslator
 
         public MethodCompilation EntryPoint { get; }
         internal SymbolResolver SymbolResolver { get; }
-        internal ShaderResourceManager ShaderResourceManager { get; }
+        internal UniformManager UniformManager { get; }
 
         public ShaderType ShaderType { get; }
         public string Code { get; private set; } = null!;
@@ -30,7 +30,7 @@ namespace ShaderTranslator
             EntryPoint = MethodManager.Require(entryPoint, true);
             SymbolResolver = symbolResolver;
             ShaderType = shaderType;
-            ShaderResourceManager = new ShaderResourceManager(TypeManager, SymbolResolver, GlobalScope);
+            UniformManager = new UniformManager(TypeManager, SymbolResolver, GlobalScope);
         }
 
         internal void Compile()
@@ -40,7 +40,7 @@ namespace ShaderTranslator
             IndentedStringBuilder result = new IndentedStringBuilder();
             result.WriteLine("#version 450");
             TypeManager.Print(result);
-            ShaderResourceManager.Print(result);
+            UniformManager.Print(result);
             MethodManager.Print(result);
             MainMethodGenerator.GenerateMainMethod(EntryPoint, result, ShaderType);
             Code = result.ToString();

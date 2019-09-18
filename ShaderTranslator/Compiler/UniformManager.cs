@@ -9,26 +9,26 @@ using System.Text;
 
 namespace ShaderTranslator
 {
-    class ShaderResourceManager
+    class UniformManager
     {
-        Dictionary<IVariable, ShaderResourceCompilation> shaderResources = new Dictionary<IVariable, ShaderResourceCompilation>();
+        Dictionary<IVariable, UniformCompilation> uniforms = new Dictionary<IVariable, UniformCompilation>();
         HashSet<IVariable> seenFields = new HashSet<IVariable>();
         TypeManager typeManager;
         SymbolResolver symbolResolver;
         NamingScope globalScope;
 
-        public ShaderResourceManager(TypeManager typeManager, SymbolResolver symbolResolver, NamingScope globalScope)
+        public UniformManager(TypeManager typeManager, SymbolResolver symbolResolver, NamingScope globalScope)
         {
             this.typeManager = typeManager;
             this.symbolResolver = symbolResolver;
             this.globalScope = globalScope;
         }
 
-        public ShaderResourceCompilation? Require(IVariable variable)
+        public UniformCompilation? Require(IVariable variable)
         {
             if (seenFields.Add(variable))
             {
-                if (shaderResources.TryGetValue(variable, out var result))
+                if (uniforms.TryGetValue(variable, out var result))
                     return result;
                 IEnumerable<IAttribute> attributes;
                 if (variable is IField field)
@@ -50,7 +50,7 @@ namespace ShaderTranslator
                 {
                     result = new ConstantBufferCompilation(variable, attr, name);
                 }
-                shaderResources.Add(variable, result);
+                uniforms.Add(variable, result);
                 return result;
             }
             return null;
@@ -58,16 +58,16 @@ namespace ShaderTranslator
 
         public void Print(IndentedStringBuilder codeBuilder)
         {
-            var shaderResources = from shaderResource in this.shaderResources.Values
-                                  orderby shaderResource.Slot
-                                  select shaderResource;
-            foreach (var shaderResource in shaderResources)
+            var uniforms = from uniform in this.uniforms.Values
+                                  orderby uniform.Slot
+                                  select uniform;
+            foreach (var uniform in uniforms)
             {
-                shaderResource.Print(codeBuilder, typeManager);
+                uniform.Print(codeBuilder, typeManager);
             }
         }
     }
-    class TextureCompilation : ShaderResourceCompilation
+    class TextureCompilation : UniformCompilation
     {
         public TextureCompilation(IVariable variable, IAttribute attribute, string name) : base(variable, attribute, name)
         {
@@ -105,7 +105,7 @@ namespace ShaderTranslator
             codeBuilder.WriteLine(";");
         }
     }
-    class ConstantBufferCompilation : ShaderResourceCompilation
+    class ConstantBufferCompilation : UniformCompilation
     {
         public ConstantBufferCompilation(IVariable variable, IAttribute attribute, string name) : base(variable, attribute, name)
         {
@@ -132,13 +132,13 @@ namespace ShaderTranslator
         }
     }
 
-    abstract class ShaderResourceCompilation
+    abstract class UniformCompilation
     {
         public int Slot { get; }
         public IVariable Variable { get; }
         public string Name { get; }
 
-        public ShaderResourceCompilation(IVariable variable, IAttribute attribute, string name)
+        public UniformCompilation(IVariable variable, IAttribute attribute, string name)
         {
             Variable = variable;
             Name = name;

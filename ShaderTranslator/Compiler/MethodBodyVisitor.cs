@@ -19,7 +19,7 @@ namespace ShaderTranslator
         TypeManager TypeManager => parent.Parent.TypeManager;
         MethodManager MethodManager => parent.Parent.MethodManager;
         SymbolResolver SymbolResolver => parent.Parent.SymbolResolver;
-        ShaderResourceManager ShaderResourceManager => parent.Parent.ShaderResourceManager;
+        UniformManager UniformManager => parent.Parent.UniformManager;
 
         Dictionary<int, string> parameterTranslation = new Dictionary<int, string>();
         Dictionary<int, string> variableTranslation = new Dictionary<int, string>();
@@ -231,7 +231,7 @@ namespace ShaderTranslator
             if (field == null)
                 return false;
 
-            var compilation = ShaderResourceManager.Require(field);
+            var compilation = UniformManager.Require(field);
             if (compilation == null)
                 return false;
 
@@ -259,9 +259,9 @@ namespace ShaderTranslator
                 var target = (invocationExpression.Target as MemberReferenceExpression)?.Target?.Annotation<MemberResolveResult>()?.Member as IField;
                 if (target == null)
                     throw new Exception("Textures can only be used directly."); //TODO: textures being passed around?
-                var result = ShaderResourceManager.Require(target) as TextureCompilation;
+                var result = UniformManager.Require(target) as TextureCompilation;
                 if (result == null)
-                    throw new Exception("Textures must be marked as ShaderResource.");
+                    throw new Exception("Textures must be marked as uniform.");
                 result.InvokeSampleCall(codeBuilder, invocationExpression, this);
                 return;
             }
