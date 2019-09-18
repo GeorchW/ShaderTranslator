@@ -12,9 +12,9 @@ namespace ShaderTranslator
 
         public CompileEngine(SymbolResolver symbolResolver) => SymbolResolver = symbolResolver;
 
-        public ShaderCompilation Compile(object? obj, MethodInfo method, SemanticsGenerator semanticsGenerator)
+        public ShaderCompilation Compile(object? obj, MethodInfo method, ShaderType shaderType)
         {
-            var compilation = new ShaderCompilation(ilSpyManager, SymbolResolver, method, semanticsGenerator);
+            var compilation = new ShaderCompilation(ilSpyManager, SymbolResolver, method, shaderType);
             compilation.Compile();
             return compilation;
         }

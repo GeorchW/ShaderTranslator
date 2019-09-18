@@ -1,21 +1,22 @@
 ﻿using ICSharpCode.Decompiler.CSharp.Syntax;
 using ICSharpCode.Decompiler.TypeSystem;
+using ShaderTranslator.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace ShaderTranslator
 {
-    public class SemanticsElement
-    {
-        public string? Semantics { get; set; } = null;
-        public TargetType Type { get; }
-        public SemanticsElement(TargetType type) => Type = type;
-    }
-    public class Parameter : SemanticsElement
+    public class Parameter
     {
         public string Name { get; }
-        public Parameter(string name, TargetType type) : base(type) => Name = name;
+        public TargetType Type { get; }
+
+        public Parameter(string name, TargetType type)
+        {
+            Name = name;
+            Type = type;
+        }
     }
     public class MethodCompilation
     {
@@ -28,8 +29,8 @@ namespace ShaderTranslator
 
         MethodDeclaration declaration;
 
-        SemanticsElement? returnType;
-        public SemanticsElement ReturnType => returnType ?? throw new Exception($"Call {nameof(GatherSignature)}() first!");
+        TargetType returnType;
+        public TargetType ReturnType => returnType ?? throw new Exception($"Call {nameof(GatherSignature)}() first!");
         Parameter[]? parameters = null;
         public IReadOnlyList<Parameter> Parameters => parameters ?? throw new Exception($"Call {nameof(GatherSignature)}() first!");
 
@@ -54,7 +55,7 @@ namespace ShaderTranslator
 
         internal void GatherSignature()
         {
-            returnType = new SemanticsElement(Parent.TypeManager.GetTargetType(Method.ReturnType));
+            returnType = Parent.TypeManager.GetTargetType(Method.ReturnType);
             List<Parameter> parameters = new List<Parameter>();
             if (!Method.IsStatic)
             {
@@ -63,7 +64,8 @@ namespace ShaderTranslator
             int index = 0;
             foreach (var param in Method.Parameters)
             {
-                AddParameter(param.Type, scope.GetFreeName(param.Name), index);
+                string name = param.GetAttributes().GetName(param.Name);
+                AddParameter(param.Type, scope.GetFreeName(name), index);
                 index++;
             }
             void AddParameter(IType type, string name, int index)
@@ -90,7 +92,7 @@ namespace ShaderTranslator
         string WriteMethodSignature()
         {
             IndentedStringBuilder codeBuilder = new IndentedStringBuilder();
-            codeBuilder.Write($"{ReturnType.Type.Name} {Name}(");
+            codeBuilder.Write($"{ReturnType.Name} {Name}(");
 
             bool isFirst = true;
             foreach (var param in Parameters)

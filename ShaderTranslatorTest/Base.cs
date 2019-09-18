@@ -19,8 +19,7 @@ namespace ShaderTranslator.Test
 
         protected void TestPixelShader(Delegate shaderFunction)
         {
-            var result = engine.Compile(shaderFunction.Target, shaderFunction.Method,
-                new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.PixelShader));
+            var result = engine.Compile(shaderFunction.Target, shaderFunction.Method, ShaderType.PixelShader);
 
             var startInfo = new ProcessStartInfo(@"E:\Programmieren\glslang\build\StandAlone\Debug\glslangValidator.exe",
                 "--stdin " +
@@ -45,8 +44,7 @@ namespace ShaderTranslator.Test
 
         protected void TestVertexShader(Delegate shaderFunction)
         {
-            var result = engine.Compile(shaderFunction.Target, shaderFunction.Method,
-                new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.VertexShader));
+            var result = engine.Compile(shaderFunction.Target, shaderFunction.Method, ShaderType.VertexShader);
             SharpDX.D3DCompiler.ShaderBytecode.Compile(result.Code, result.EntryPoint.Name, "vs_5_0");
         }
     }

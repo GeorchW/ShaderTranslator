@@ -14,49 +14,52 @@ namespace ShaderTranslator.Demo
         static CompileEngine compileEngine = new CompileEngine(SymbolResolver.Default);
         public static (VertexShader, InputLayout, int stride) CompileVertexShader(Delegate shaderMethod, Device device)
         {
-            var semanticsGenerator = new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.VertexShader);
-            var result = compileEngine.Compile(shaderMethod.Target, shaderMethod.Method, semanticsGenerator);
-            var compilation = SharpDX.D3DCompiler.ShaderBytecode.Compile(result.Code, result.EntryPoint.Name, "vs_5_0");
-            var shader = new VertexShader(device, compilation.Bytecode.Data);
-            InputElement[] elements = GetInputElements(result);
-            int stride = elements.Sum(ie => ie.Format.SizeOfInBytes());
-            var inputLayout = new InputLayout(device, compilation.Bytecode.Data, elements);
-            return (shader, inputLayout, stride);
+            throw new NotImplementedException();
+            //var semanticsGenerator = new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.VertexShader);
+            //var result = compileEngine.Compile(shaderMethod.Target, shaderMethod.Method, semanticsGenerator);
+            //var compilation = SharpDX.D3DCompiler.ShaderBytecode.Compile(result.Code, result.EntryPoint.Name, "vs_5_0");
+            //var shader = new VertexShader(device, compilation.Bytecode.Data);
+            //InputElement[] elements = GetInputElements(result);
+            //int stride = elements.Sum(ie => ie.Format.SizeOfInBytes());
+            //var inputLayout = new InputLayout(device, compilation.Bytecode.Data, elements);
+            //return (shader, inputLayout, stride);
         }
 
         private static InputElement[] GetInputElements(ShaderCompilation shader)
         {
-            List<InputElement> inputElements = new List<InputElement>();
-            foreach (var parameter in shader.EntryPoint.Parameters)
-            {
-                if (parameter.Semantics != null)
-                {
-                    var match = Regex.Match(parameter.Semantics, "([a-zA-Z]*)(\\d?)");
-                    if (match.Success)
-                    {
-                        string name = match.Groups[1].Value;
-                        if (!int.TryParse(match.Groups[2].Value, out int index))
-                            index = 0;
-                        if (!(parameter.Type is PrimitiveTargetType primitive))
-                            throw new Exception();
-                        PrimitiveType primitiveType = primitive.PrimitiveType;
-                        inputElements.Add(new InputElement(name, index, ToDxgiFormat(primitiveType), 0));
-                        continue;
-                    }
-                }
-                throw new Exception();
-            }
+            throw new NotImplementedException();
+            //List<InputElement> inputElements = new List<InputElement>();
+            //foreach (var parameter in shader.EntryPoint.Parameters)
+            //{
+            //    if (parameter.Semantics != null)
+            //    {
+            //        var match = Regex.Match(parameter.Semantics, "([a-zA-Z]*)(\\d?)");
+            //        if (match.Success)
+            //        {
+            //            string name = match.Groups[1].Value;
+            //            if (!int.TryParse(match.Groups[2].Value, out int index))
+            //                index = 0;
+            //            if (!(parameter.Type is PrimitiveTargetType primitive))
+            //                throw new Exception();
+            //            PrimitiveType primitiveType = primitive.PrimitiveType;
+            //            inputElements.Add(new InputElement(name, index, ToDxgiFormat(primitiveType), 0));
+            //            continue;
+            //        }
+            //    }
+            //    throw new Exception();
+            //}
 
-            return inputElements.ToArray();
+            //return inputElements.ToArray();
         }
 
         public static PixelShader CompilePixelShader(Delegate shaderMethod, Device device)
         {
-            var semanticsGenerator = new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.PixelShader);
-            var result = compileEngine.Compile(shaderMethod.Target, shaderMethod.Method, semanticsGenerator);
-            var compilation = SharpDX.D3DCompiler.ShaderBytecode.Compile(result.Code, result.EntryPoint.Name, "ps_5_0");
-            var shader = new PixelShader(device, compilation.Bytecode.Data);
-            return shader;
+            throw new NotImplementedException();
+            //var semanticsGenerator = new SemanticsGenerator(InputSemanticsSettings.TexCoord, OutputSemanticsSettings.PixelShader);
+            //var result = compileEngine.Compile(shaderMethod.Target, shaderMethod.Method, semanticsGenerator);
+            //var compilation = SharpDX.D3DCompiler.ShaderBytecode.Compile(result.Code, result.EntryPoint.Name, "ps_5_0");
+            //var shader = new PixelShader(device, compilation.Bytecode.Data);
+            //return shader;
         }
 
         private static Format ToDxgiFormat(PrimitiveType primitiveType)

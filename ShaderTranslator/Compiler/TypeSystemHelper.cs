@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using ShaderTranslator.Syntax;
 
 namespace ShaderTranslator
 {
@@ -48,6 +49,14 @@ namespace ShaderTranslator
             }
             attribute = null;
             return false;
+        }
+        public static string GetName(this IEnumerable<IAttribute> attributes, string defaultName)
+        {
+            if (attributes.TryGetAttribute(typeof(GlslAttribute), out var attribute))
+            {
+                defaultName = (string)attribute.FixedArguments[0].Value;
+            }
+            return defaultName;
         }
     }
 }

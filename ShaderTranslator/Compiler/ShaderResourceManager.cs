@@ -84,10 +84,7 @@ namespace ShaderTranslator
 
             string methodName = mem.MemberName;
             var method = (invocationExpression.Annotation<InvocationResolveResult>()?.Member as IMethod);
-            if (method != null && method.GetAttributes().TryGetAttribute(typeof(GlslAttribute), out var attribute))
-            {
-                methodName = (string)attribute.FixedArguments[0].Value;
-            }
+            methodName = method?.GetAttributes().GetName(methodName) ?? methodName;
 
             codeBuilder.Write(methodName);
             codeBuilder.Write("(");
