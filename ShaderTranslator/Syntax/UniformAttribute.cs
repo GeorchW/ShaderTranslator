@@ -5,13 +5,11 @@ using System.Text;
 namespace ShaderTranslator.Syntax
 {
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Field, AllowMultiple = false)]
-    class ShaderResourceAttribute : Attribute
+    class UniformAttribute : Attribute
     {
-        public int Set { get; }
         public int Slot { get; }
-        public ShaderResourceAttribute(int set, int slot)
+        public UniformAttribute(int slot)
         {
-            Set = set;
             Slot = slot;
         }
     }

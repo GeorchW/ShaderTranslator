@@ -38,7 +38,7 @@ namespace ShaderTranslator
                 else
                     return null;
 
-                if (!attributes.TryGetAttribute(typeof(ShaderResourceAttribute), out var attr))
+                if (!attributes.TryGetAttribute(typeof(UniformAttribute), out var attr))
                     return null;
 
                 string name = globalScope.GetFreeName(variable.Name);
@@ -59,7 +59,6 @@ namespace ShaderTranslator
         public void Print(IndentedStringBuilder codeBuilder)
         {
             var shaderResources = from shaderResource in this.shaderResources.Values
-                                  orderby shaderResource.Set
                                   orderby shaderResource.Slot
                                   select shaderResource;
             foreach (var shaderResource in shaderResources)
@@ -135,7 +134,6 @@ namespace ShaderTranslator
 
     abstract class ShaderResourceCompilation
     {
-        public int Set { get; }
         public int Slot { get; }
         public IVariable Variable { get; }
         public string Name { get; }
@@ -144,8 +142,7 @@ namespace ShaderTranslator
         {
             Variable = variable;
             Name = name;
-            Set = (int)attribute.FixedArguments[0].Value;
-            Slot = (int)attribute.FixedArguments[1].Value;
+            Slot = (int)attribute.FixedArguments[0].Value;
         }
 
         public abstract void Print(IndentedStringBuilder codeBuilder, TypeManager typeManager);

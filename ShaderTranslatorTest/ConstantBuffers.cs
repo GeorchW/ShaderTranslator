@@ -9,7 +9,7 @@ namespace ShaderTranslator.Test
 {
     class ConstantBuffers : Base
     {
-        [ShaderResource(0, 0)]
+        [Uniform(0)]
         float offset;
 
         [Test]
