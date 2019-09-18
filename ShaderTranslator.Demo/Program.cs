@@ -14,7 +14,7 @@ namespace ShaderTranslator.Demo
         struct VsOutput
         {
             public Vector2 TexCoord;
-            [SvPosition]
+            [Glsl("gl_Position")]
             public Vector4 Position;
         }
         static void Main(string[] args)

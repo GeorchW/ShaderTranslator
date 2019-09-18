@@ -51,15 +51,12 @@ namespace ShaderTranslator
             var semanticsAttribute = field.GetAttributes()
                 .Where(attr =>
                     attr.AttributeType.GetAllBaseTypes()
-                    .Any(type => type.FullName == typeof(SemanticsAttribute).FullName))
+                    .Any(type => type.FullName == typeof(GlslAttribute).FullName))
                 .SingleOrDefault();
             if(semanticsAttribute != null)
             {
                 //TODO: It would be easier to have the actual object here.
-                if (semanticsAttribute.AttributeType.FullName == typeof(SvPositionAttribute).FullName)
-                    semantics = "SV_Position";
-                if (semanticsAttribute.AttributeType.FullName == typeof(SvTargetAttribute).FullName)
-                    semantics = "SV_Target" + semanticsAttribute.FixedArguments[0].Value;
+                semantics = (string)semanticsAttribute.FixedArguments[0].Value;
             }
             return new Field(typeManager.GetTargetType(type), field.Name, arrayLength, semantics);
         }
