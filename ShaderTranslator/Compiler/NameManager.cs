@@ -30,7 +30,10 @@ namespace ShaderTranslator
             "image2D", "image3D", "imageCube", "iimage1D", "iimage2D", "iimage3D", "iimageCube", "uimage1D", "uimage2D",
             "uimage3D", "uimageCube", "image1DArray", "image2DArray", "iimage1DArray", "iimage2DArray", "uimage1DArray",
             "uimage2DArray", "image1DShadow", "image2DShadow", "image1DArrayShadow", "image2DArrayShadow", "imageBuffer",
-            "iimageBuffer", "uimageBuffer", "sizeof", "cast", "namespace", "using", "row_major"
+            "iimageBuffer", "uimageBuffer", "sizeof", "cast", "namespace", "using", "row_major",
+
+            //pre-defined functions should not be overloaded either
+            "texture", "textureLod", "sin", "cos", "tan", "mix"
         };
 
         public bool IsKeyword(string name) => keywords.Contains(name);
