@@ -10,9 +10,24 @@ namespace ShaderTranslator
     {
         public static string GenerateMainMethod(MethodCompilation entryPoint, IndentedStringBuilder codeBuilder, ShaderType shaderType)
         {
-            foreach (var param in entryPoint.Parameters)
+            if (entryPoint.Parameters.Count == 1
+                && entryPoint.Parameters[0].Type is StructTargetType structInput)
             {
-                codeBuilder.WriteLine($"in {param.Type.Name} {param.Name};");
+                foreach (var field in structInput.Fields)
+                {
+                    string fieldName = field.SemanticName ?? field.Name;
+                    if (!fieldName.StartsWith("gl_"))
+                    {
+                        codeBuilder.WriteLine($"in {field.Type.Name} {fieldName};");
+                    }
+                }
+            }
+            else
+            {
+                foreach (var param in entryPoint.Parameters)
+                {
+                    codeBuilder.WriteLine($"in {param.Type.Name} {param.Name};");
+                }
             }
             string? singleReturnName = null;
             if (entryPoint.ReturnType is StructTargetType returnStruct)
@@ -63,7 +78,34 @@ namespace ShaderTranslator
             codeBuilder.WriteLine("void main()");
             codeBuilder.WriteLine("{");
             codeBuilder.IncreaseIndent();
-            string callEntryPoint = $"{entryPoint.Name}({string.Join(",", entryPoint.Parameters.Select(p => p.Name))})";
+
+
+            string callEntryPoint;
+            if (entryPoint.Parameters.Count == 1
+                && entryPoint.Parameters[0].Type is StructTargetType structInput2)
+            {
+                codeBuilder.WriteLine($"{structInput2.Name} inputStruct = {structInput2.Name}(");
+                codeBuilder.IncreaseIndent();
+
+                bool isFirst = true;
+                foreach (var field in structInput2.Fields)
+                {
+                    if (isFirst)
+                        isFirst = false;
+                    else
+                        codeBuilder.Write(",\n");
+                    string name = field.SemanticName ?? field.Name;
+                    codeBuilder.Write(name);
+                }
+                codeBuilder.WriteLine();
+                codeBuilder.DecreaseIndent();
+                codeBuilder.WriteLine(");");
+                callEntryPoint = $"{entryPoint.Name}(inputStruct)";
+            }
+            else
+            {
+                callEntryPoint = $"{entryPoint.Name}({string.Join(",", entryPoint.Parameters.Select(p => p.Name))})";
+            }
             if (singleReturnName != null)
             {
                 codeBuilder.WriteLine($"{singleReturnName} = {callEntryPoint};");

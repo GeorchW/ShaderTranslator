@@ -11,7 +11,7 @@ namespace ShaderTranslator.Test
         struct SomeStruct
         {
             public float A;
-            public int B;
+            public float B;
         }
         [Test]
         public void InputStruct() => TestPixelShader((SomeStruct input) => input.A * input.B);
