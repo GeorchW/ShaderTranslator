@@ -40,9 +40,11 @@ namespace ShaderTranslator
             while (TypeManager.CompileNextType()) ;
             SemanticsGenerator.GenerateSemantics(EntryPoint);
             IndentedStringBuilder result = new IndentedStringBuilder();
+            result.WriteLine("#version 450");
             TypeManager.Print(result);
             ShaderResourceManager.Print(result);
             MethodManager.Print(result);
+            MainMethodGenerator.GenerateMainMethod(EntryPoint, result);
             Code = result.ToString();
         }
     }
