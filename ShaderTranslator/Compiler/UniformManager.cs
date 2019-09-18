@@ -48,6 +48,7 @@ namespace ShaderTranslator
                 }
                 else
                 {
+                    typeManager.GetTargetType(variable.Type); //ensure that the type exists
                     result = new ConstantBufferCompilation(variable, attr, name);
                 }
                 uniforms.Add(variable, result);
