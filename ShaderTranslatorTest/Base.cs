@@ -17,13 +17,21 @@ namespace ShaderTranslator.Test
         protected void TestPixelShader<TIn, TOut>(Func<TIn, TOut> func) => TestPixelShader((Delegate)func);
         protected void TestPixelShader<TIn1, TIn2, TOut>(Func<TIn1, TIn2, TOut> func) => TestPixelShader((Delegate)func);
 
-        protected void TestPixelShader(Delegate shaderFunction)
+
+        protected void TestPixelShader(Delegate shaderFunction) => TestShader(shaderFunction, ShaderType.PixelShader);
+        protected void TestVertexShader(Delegate shaderFunction) => TestShader(shaderFunction, ShaderType.VertexShader);
+        protected void TestShader(Delegate shaderFunction, ShaderType shaderType)
         {
-            var result = engine.Compile(shaderFunction.Target, shaderFunction.Method, ShaderType.PixelShader);
+            var result = engine.Compile(shaderFunction.Target, shaderFunction.Method, shaderType);
 
             var startInfo = new ProcessStartInfo(@"E:\Programmieren\glslang\build\StandAlone\Debug\glslangValidator.exe",
                 "--stdin " +
-                "-S frag " +
+                shaderType switch
+                {
+                    ShaderType.PixelShader => "-S frag ",
+                    ShaderType.VertexShader => "-S vert ",
+                    _ => throw new NotImplementedException()
+                } +
                 "-G100 " +
                 "-d " +
                 "--auto-map-locations ");
@@ -40,12 +48,6 @@ namespace ShaderTranslator.Test
                 string output = process.StandardOutput.ReadToEnd();
                 Assert.Fail(error + output);
             }
-        }
-
-        protected void TestVertexShader(Delegate shaderFunction)
-        {
-            var result = engine.Compile(shaderFunction.Target, shaderFunction.Method, ShaderType.VertexShader);
-            SharpDX.D3DCompiler.ShaderBytecode.Compile(result.Code, result.EntryPoint.Name, "vs_5_0");
         }
     }
 }
