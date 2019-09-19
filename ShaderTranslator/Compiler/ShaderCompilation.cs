@@ -39,7 +39,7 @@ namespace ShaderTranslator
             while (MethodManager.CompileNextMethod()) ;
             while (TypeManager.CompileNextType()) ;
             IndentedStringBuilder result = new IndentedStringBuilder();
-            result.WriteLine("#version 450");
+            result.WriteLine("#version 460");
             foreach (var attribute in EntryPoint.Method.GetAttributes())
             {
                 if (attribute.AttributeType.FullName != typeof(VerbatimHeaderAttribute).FullName)
