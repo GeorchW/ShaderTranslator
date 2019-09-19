@@ -8,5 +8,6 @@ namespace ShaderTranslator.Syntax
     {
         public static void Discard() => throw new NotImplementedException();
         public static void Unroll() => throw new NotImplementedException();
+        public static void GlslVerbatim(string code) => throw new NotImplementedException();
     }
 }

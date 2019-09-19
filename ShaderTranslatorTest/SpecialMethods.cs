@@ -10,20 +10,26 @@ namespace ShaderTranslator.Test
     {
         [Test]
         public void Discard() => TestPixelShader((float x) =>
-             {
-                 ShaderMethods.Discard();
-                 return 0;
-             });
+        {
+            ShaderMethods.Discard();
+            return 0;
+        });
 
         [Test]
         public void Unroll() => TestPixelShader((float x) =>
+        {
+            ShaderMethods.Unroll();
+            for (int i = 0; i < 10; i++)
             {
-                ShaderMethods.Unroll();
-                for (int i = 0; i < 10; i++)
-                {
-                    x += i;
-                }
-                return x;
-            });
+                x += i;
+            }
+            return x;
+        });
+        [Test]
+        public void Verbatim() => TestPixelShader((float x) =>
+        {
+            ShaderMethods.GlslVerbatim("discard;");
+            return x;
+        });
     }
 }

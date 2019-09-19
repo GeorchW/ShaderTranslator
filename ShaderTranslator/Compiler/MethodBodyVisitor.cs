@@ -57,6 +57,14 @@ namespace ShaderTranslator
                     codeBuilder.WriteLine("discard;");
                     return;
                 }
+                else if (member.FullNameIs("ShaderTranslator.Syntax.ShaderMethods", "GlslVerbatim"))
+                {
+                    var code = invocation.Arguments.FirstOrNullObject()?.Annotation<ConstantResolveResult>()?.ConstantValue as string;
+                    if (code == null)
+                        throw new Exception("GlslVerbatim must have a constant string argument.");
+                    codeBuilder.WriteLine(code);
+                    return;
+                }
             }
             VisitChildrenInternal(expressionStatement);
             codeBuilder.WriteLine(";");
