@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Text;
 using System.Reflection.Metadata;
+using ShaderTranslator.Syntax;
 
 namespace ShaderTranslator
 {
@@ -39,6 +40,13 @@ namespace ShaderTranslator
             while (TypeManager.CompileNextType()) ;
             IndentedStringBuilder result = new IndentedStringBuilder();
             result.WriteLine("#version 450");
+            foreach (var attribute in EntryPoint.Method.GetAttributes())
+            {
+                if (attribute.AttributeType.FullName != typeof(VerbatimHeaderAttribute).FullName)
+                    continue;
+                string code = (string)attribute.FixedArguments[0].Value;
+                result.WriteLine(code);
+            }
             TypeManager.Print(result);
             UniformManager.Print(result);
             MethodManager.Print(result);
