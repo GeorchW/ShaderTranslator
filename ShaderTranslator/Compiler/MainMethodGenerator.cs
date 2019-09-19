@@ -10,8 +10,14 @@ namespace ShaderTranslator
     {
         public static string GenerateMainMethod(MethodCompilation entryPoint, IndentedStringBuilder codeBuilder, ShaderType shaderType)
         {
-            int outputLocationIndex = 1;
-            int inputLocationIndex = 1;
+            int outputLocationIndex = 0;
+            int inputLocationIndex = 0;
+            if (shaderType == ShaderType.VertexShader)
+            {
+                // This seems to be some bug at least with the Intel driver, 
+                // where 0-based vertex attribute indices seem to not work.
+                inputLocationIndex = 1;
+            }
 
             if (entryPoint.Parameters.Count == 1
                 && entryPoint.Parameters[0].Type is StructTargetType structInput)
@@ -60,7 +66,7 @@ namespace ShaderTranslator
                     (singleReturnName, generateVariable) = shaderType switch
                     {
                         ShaderType.VertexShader => ("gl_Position", false),
-                        ShaderType.FragmentShader => ("gl_FragColor", false),
+                        ShaderType.FragmentShader => ("FragColor", true),
                         _ => throw new NotImplementedException()
                     };
                     if (generateVariable)
