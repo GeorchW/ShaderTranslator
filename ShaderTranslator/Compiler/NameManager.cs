@@ -33,7 +33,8 @@ namespace ShaderTranslator
             "iimageBuffer", "uimageBuffer", "sizeof", "cast", "namespace", "using", "row_major",
 
             //pre-defined functions should not be overloaded either
-            "texture", "textureLod", "sin", "cos", "tan", "mix"
+            "texture", "textureLod", "sin", "cos", "tan", "mix",
+            "_this"
         };
 
         public bool IsKeyword(string name) => keywords.Contains(name);
@@ -43,6 +44,10 @@ namespace ShaderTranslator
             new Regex("(?<=_)_+"), // duplicate underscores
             new Regex("[^a-zA-Z0-9]+"), // non-alphanumeric characters
             new Regex("^\\d"), // leading digits
+
+            // suffixes used internally
+            new Regex("_ctor_inner$"),
+            new Regex("_constant_buffer$"),
         };
         public string Legalize(string name)
         {

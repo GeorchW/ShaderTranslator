@@ -119,7 +119,7 @@ namespace ShaderTranslator
             codeBuilder.Write(Slot);
             codeBuilder.Write(") uniform ");
             //TODO: requires a proper name
-            codeBuilder.Write(Name + "_asdfqwetr_constant_buffer");
+            codeBuilder.Write(Name + "_constant_buffer");
             codeBuilder.WriteLine("{");
             codeBuilder.IncreaseIndent();
 

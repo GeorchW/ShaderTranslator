@@ -11,87 +11,172 @@ namespace ShaderTranslator
     {
         public string Name { get; }
         public TargetType Type { get; }
+        public string? Modifiers { get; }
 
-        public Parameter(string name, TargetType type)
+        public Parameter(string name, TargetType type, string? modifiers)
         {
             Name = name;
             Type = type;
+            Modifiers = modifiers;
         }
+
+        internal void Print(IndentedStringBuilder codeBuilder)
+        {
+            if (Modifiers != null)
+            {
+                codeBuilder.Write(Modifiers);
+                codeBuilder.Write(" ");
+            }
+            codeBuilder.Write(Type.Name);
+            codeBuilder.Write(" ");
+            codeBuilder.Write(Name);
+        }
+    }
+    public enum MethodKind
+    {
+        Regular,
+        Constructor
     }
     public class MethodCompilation
     {
         public ShaderCompilation Parent { get; }
         public IMethod Method { get; }
         public string Name { get; }
-        public bool IsRoot { get; }
+        public MethodKind Kind { get; }
 
         NamingScope scope;
 
-        MethodDeclaration declaration;
+        AstNode body;
 
         TargetType? returnType;
         public TargetType ReturnType => returnType ?? throw new Exception($"Call {nameof(GatherSignature)}() first!");
         Parameter[]? parameters = null;
         public IReadOnlyList<Parameter> Parameters => parameters ?? throw new Exception($"Call {nameof(GatherSignature)}() first!");
 
-        string? bodyCode;
-        string BodyCode => bodyCode ?? throw new Exception($"Call {nameof(Compile)}() first!");
 
-
-        internal MethodCompilation(ShaderCompilation parent, ILSpyManager ilSpyManager, IMethod method, string name, bool isRoot)
+        internal MethodCompilation(ShaderCompilation parent, ILSpyManager ilSpyManager, IMethod method, string name)
         {
             this.Method = method;
-            IsRoot = isRoot;
+            Kind = method.IsConstructor ? MethodKind.Constructor : MethodKind.Regular;
             this.Parent = parent;
             this.scope = new NamingScope(parent.GlobalScope);
             Name = name;
 
-            declaration = ilSpyManager.GetSyntaxTree(method)
+            T GetDeclaration<T>()
+            => ilSpyManager.GetSyntaxTree(method)
                 .Children
-                .Where(node => node is MethodDeclaration)
-                .Cast<MethodDeclaration>()
+                .Where(node => node is T)
+                .Cast<T>()
                 .Single();
+
+            body = Kind switch
+            {
+                MethodKind.Regular => GetDeclaration<MethodDeclaration>().Body,
+                MethodKind.Constructor => GetDeclaration<ConstructorDeclaration>().Body,
+                _ => throw new NotSupportedException()
+            };
         }
 
         internal void GatherSignature()
         {
-            returnType = Parent.TypeManager.GetTargetType(Method.ReturnType);
+            returnType = Parent.TypeManager.GetTargetType(
+                Kind == MethodKind.Constructor
+                ? Method.DeclaringType
+                : Method.ReturnType);
             List<Parameter> parameters = new List<Parameter>();
-            if (!Method.IsStatic)
+            if (!Method.IsStatic && Method.DeclaringType.Kind == TypeKind.Struct && Kind != MethodKind.Constructor)
             {
-                //AddParameter(method.DeclaringType, "this", -1);
+                AddParameter(Method.DeclaringType, "_this", -1, "inout");
             }
             int index = 0;
             foreach (var param in Method.Parameters)
             {
                 string name = param.GetAttributes().GetName(param.Name)!;
-                AddParameter(param.Type, scope.GetFreeName(name), index);
+                string? modifiers = param.ReferenceKind switch
+                {
+                    ReferenceKind.In => "in",
+                    ReferenceKind.Out => "out",
+                    ReferenceKind.Ref => "inout",
+                    _ => null
+                };
+                AddParameter(param.Type, scope.GetFreeName(name), index,
+                    modifiers);
                 index++;
             }
-            void AddParameter(IType type, string name, int index)
+            void AddParameter(IType type, string name, int index, string? modifiers = null)
             {
-                parameters.Add(new Parameter(name, Parent.TypeManager.GetTargetType(type)));
+                parameters.Add(new Parameter(name, Parent.TypeManager.GetTargetType(type), modifiers));
                 parameterResolve.Add(index, name);
             }
             this.parameters = parameters.ToArray();
+
+            if (Kind == MethodKind.Constructor)
+            {
+                parameterResolve.Add(-1, "_this");
+            }
         }
 
         internal void Compile()
         {
-            //WriteMethodSignature(codeBuilder);
-            //WriteMethodBody(codeBuilder);
-
             GatherSignature();
-            WriteMethodBody();
+
+            IndentedStringBuilder codeBuilder = new IndentedStringBuilder();
+            if (Kind == MethodKind.Constructor)
+            {
+                string innerName = Name + "_ctor_inner";
+
+                // Write inner method
+                codeBuilder.Write("void ");
+                codeBuilder.Write(innerName);
+                codeBuilder.Write("(");
+                codeBuilder.Write("inout ");
+                codeBuilder.Write(ReturnType.Name);
+                codeBuilder.Write(" _this");
+                foreach (var param in Parameters)
+                {
+                    codeBuilder.Write(", ");
+                    param.Print(codeBuilder);
+                }
+                codeBuilder.WriteLine(")");
+                WriteMethodBody(codeBuilder);
+
+                // Write wrapper method
+                WriteMethodSignature(codeBuilder);
+                codeBuilder.WriteLine("{");
+                codeBuilder.IncreaseIndent();
+
+                codeBuilder.Write(ReturnType.Name);
+                codeBuilder.WriteLine(" _this;");
+
+                codeBuilder.Write(innerName);
+                codeBuilder.Write("(_this");
+                foreach (var param in Parameters)
+                {
+                    codeBuilder.Write(", ");
+                    codeBuilder.Write(param.Name);
+                }
+                codeBuilder.WriteLine(");");
+
+                codeBuilder.WriteLine("return _this;");
+
+                codeBuilder.DecreaseIndent();
+                codeBuilder.WriteLine("}");
+            }
+            else
+            {
+                WriteMethodSignature(codeBuilder);
+                WriteMethodBody(codeBuilder);
+            }
+            code = codeBuilder.ToString();
         }
 
-        internal string GetCode() => WriteMethodSignature() + BodyCode;
+        internal string GetCode() => code ?? throw new Exception($"Call {nameof(Compile)}() first!");
+        string? code;
 
         Dictionary<int, string> parameterResolve = new Dictionary<int, string>();
 
-        string WriteMethodSignature()
+        void WriteMethodSignature(IndentedStringBuilder codeBuilder)
         {
-            IndentedStringBuilder codeBuilder = new IndentedStringBuilder();
             codeBuilder.Write($"{ReturnType.Name} {Name}(");
 
             bool isFirst = true;
@@ -100,31 +185,25 @@ namespace ShaderTranslator
                 if (isFirst) isFirst = false;
                 else codeBuilder.Write(", ");
 
-                codeBuilder.Write(param.Type.Name);
-                codeBuilder.Write(" ");
-                codeBuilder.Write(param.Name);
+                param.Print(codeBuilder);
             }
             codeBuilder.Write(")");
             codeBuilder.WriteLine();
-            return codeBuilder.ToString();
         }
 
-        void WriteMethodBody()
+        void WriteMethodBody(IndentedStringBuilder codeBuilder)
         {
             if (!Method.HasBody)
                 throw new Exception("Method must have a body.");
-            IndentedStringBuilder codeBuilder = new IndentedStringBuilder();
 
             codeBuilder.WriteLine("{");
             codeBuilder.IncreaseIndent();
 
             MethodBodyVisitor visitor = new MethodBodyVisitor(codeBuilder, this, scope, parameterResolve);
-            declaration.Body.AcceptVisitor(visitor);
+            body.AcceptVisitor(visitor);
 
             codeBuilder.DecreaseIndent();
             codeBuilder.WriteLine("}");
-
-            bodyCode = codeBuilder.ToString();
         }
     }
 }

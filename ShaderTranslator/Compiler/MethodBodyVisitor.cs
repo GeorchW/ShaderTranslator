@@ -216,6 +216,7 @@ namespace ShaderTranslator
         {
             if (TryLocalAccess(identifierExpression)) return;
             if (TryConstantBufferAccess(identifierExpression)) return;
+            if (TryThisAccess(identifierExpression)) return;
             throw new NotImplementedException();
         }
 
@@ -247,6 +248,18 @@ namespace ShaderTranslator
             return true;
         }
 
+        bool TryThisAccess(AstNode node)
+        {
+            var memberReference = node.Annotation<MemberResolveResult>();
+            if(memberReference.TargetResult is ThisResolveResult)
+            {
+                codeBuilder.Write("_this.");
+                codeBuilder.Write(memberReference.Member.Name);
+                return true;
+            }
+            return false;
+        }
+
         public override void VisitReturnStatement(ReturnStatement returnStatement)
         {
             if (returnStatement.Expression == null)
@@ -261,7 +274,8 @@ namespace ShaderTranslator
 
         public override void VisitInvocationExpression(InvocationExpression invocationExpression)
         {
-            var method = (IMethod)invocationExpression.Annotation<InvocationResolveResult>().Member;
+            InvocationResolveResult invocationResolveResult = invocationExpression.Annotation<InvocationResolveResult>();
+            var method = (IMethod)invocationResolveResult.Member;
             if (SymbolResolver.IsTextureType(method.DeclaringType))
             {
                 var target = (invocationExpression.Target as MemberReferenceExpression)?.Target?.Annotation<MemberResolveResult>()?.Member as IField;
@@ -282,8 +296,15 @@ namespace ShaderTranslator
             bool isFirst = true;
             if (!method.IsStatic)
             {
-                var target = ((MemberReferenceExpression)invocationExpression.Target).Target;
-                AddParameter(target);
+                if(invocationExpression.Target is MemberReferenceExpression memberReference)
+                    AddParameter(memberReference.Target);
+                else if(invocationResolveResult.TargetResult is ILVariableResolveResult)
+                {
+                    isFirst = false;
+                    codeBuilder.Write("_this");
+                }
+                else
+                    throw new Exception();
             }
             foreach (var param in invocationExpression.Arguments)
             {
@@ -369,6 +390,15 @@ namespace ShaderTranslator
                     else throw new NotImplementedException();
                 }
             }
+            else if(assignmentExpression.Left is IdentifierExpression identifier
+                && identifier.Annotation<MemberResolveResult>() is MemberResolveResult result
+                && result != null
+                && result.TargetResult is ThisResolveResult thisResolve
+                && result.Member is IField field)
+            {
+                codeBuilder.Write("_this.");
+                codeBuilder.Write(SymbolResolver.TryResolve(field)?.Name ?? field.Name);
+            }
             else throw new NotImplementedException();
         }
 
@@ -424,14 +454,16 @@ namespace ShaderTranslator
         public override void VisitObjectCreateExpression(ObjectCreateExpression objectCreateExpression)
         {
             var ctor = (IMethod)objectCreateExpression.Annotation<InvocationResolveResult>().Member;
-            //TODO: Only valid ctors should be compiled implicitely.
-            // Others may have to be translated (special cases).
-            // For example, we can simulate custom struct constructors.
             var itype = ctor.DeclaringType;
             var type = TypeManager.GetTargetType(itype);
-            if (!type.IsPrimitive)
-                throw new Exception("Constructors of non-primitive types aren't supported.");
-            WriteCall(type.Name, objectCreateExpression.Arguments);
+            if (type.IsPrimitive)
+                WriteCall(type.Name, objectCreateExpression.Arguments);
+            else
+            {
+                var member = (IMethod)objectCreateExpression.Annotation<InvocationResolveResult>().Member;
+                var method = MethodManager.Require(member);
+                WriteCall(method.Name, objectCreateExpression.Arguments);
+            }
         }
 
         //public override void VisitDefaultValueExpression(DefaultValueExpression defaultValueExpression)

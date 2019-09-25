@@ -20,19 +20,19 @@ namespace ShaderTranslator
             this.symbolResolver = symbolResolver;
             this.ilSpyManager = ilSpyManager;
         }
-        public MethodCompilation Require(IMethod method, bool isRoot = false)
+        public MethodCompilation Require(IMethod method)
         {
             if (seenMethods.TryGetValue(method, out var result))
                 return result;
             else if (symbolResolver.TryResolve(method) is ResolveResult result2)
             {
-                result = new MethodCompilation(parent, ilSpyManager, method, result2.Name, isRoot);
+                result = new MethodCompilation(parent, ilSpyManager, method, result2.Name);
                 seenMethods.Add(method, result);
             }
             else
             {
-                var name = parent.GlobalScope.GetFreeName(method.Name);
-                result = new MethodCompilation(parent, ilSpyManager, method, name, isRoot);
+                var name = parent.GlobalScope.GetFreeName(method.DeclaringType.Name + "_" + method.Name);
+                result = new MethodCompilation(parent, ilSpyManager, method, name);
                 seenMethods.Add(method, result);
                 toBeVisited.Enqueue(result);
             }

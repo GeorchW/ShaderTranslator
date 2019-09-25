@@ -28,7 +28,7 @@ namespace ShaderTranslator
             TypeManager = new TypeManager(decompiler.TypeSystem, symbolResolver.MathApi, GlobalScope);
             MethodManager = new MethodManager(this, symbolResolver, ilSpyManager);
             var entryPoint = decompiler.TypeSystem.MainModule.GetDefinition((MethodDefinitionHandle)rootMethod.GetEntityHandle());
-            EntryPoint = MethodManager.Require(entryPoint, true);
+            EntryPoint = MethodManager.Require(entryPoint);
             SymbolResolver = symbolResolver;
             ShaderType = shaderType;
             UniformManager = new UniformManager(TypeManager, SymbolResolver, GlobalScope);
