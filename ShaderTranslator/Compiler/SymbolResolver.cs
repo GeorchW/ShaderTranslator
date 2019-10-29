@@ -22,6 +22,7 @@ namespace ShaderTranslator
             result.AddExternalsResolver(new VectorComponentResolver());
             result.AddExternalsResolver(new VectorLengthResolver());
             result.AddExternalsResolver(new VectorOperatorResolver());
+            result.AddExternalsResolver(new VectorMethodResolver());
             result.AddTextureType(typeof(Texture2D).FullName!);
             result.AddTextureType(typeof(TextureCube).FullName!);
             result.MathApi.AddType(typeof(int), ComponentType.Int, VectorLength.Scalar);

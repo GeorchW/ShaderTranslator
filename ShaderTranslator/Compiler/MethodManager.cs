@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using System;
 
 namespace ShaderTranslator
 {
@@ -14,6 +15,9 @@ namespace ShaderTranslator
         ShaderCompilation parent;
         SymbolResolver symbolResolver;
 
+        List<string> requiredCode = new List<string>();
+        HashSet<IParameterizedMember> requiredCodeSet = new HashSet<IParameterizedMember>();
+
         public MethodManager(ShaderCompilation parent, SymbolResolver symbolResolver, ILSpyManager ilSpyManager)
         {
             this.parent = parent;
@@ -24,9 +28,11 @@ namespace ShaderTranslator
         {
             if (seenMethods.TryGetValue(method, out var result))
                 return result;
-            else if (symbolResolver.TryResolve(method) is ResolveResult result2)
+            else if (symbolResolver.TryResolve(method) is ResolveResult resolveResult)
             {
-                result = new MethodCompilation(parent, ilSpyManager, method, result2.Name);
+                if (resolveResult.RequiredCode != null)
+                    RegisterRequiredCode(method, resolveResult.RequiredCode);
+                result = new MethodCompilation(parent, ilSpyManager, method, resolveResult.Name);
                 seenMethods.Add(method, result);
             }
             else
@@ -49,10 +55,22 @@ namespace ShaderTranslator
         }
         public void Print(IndentedStringBuilder target)
         {
+            target.WriteLine("// Required code from math usage");
+            foreach (var code in requiredCode)
+            {
+                target.WriteLine(code);
+            }
+            target.WriteLine("// User-defined methods");
             foreach (var str in methods.Reverse<MethodCompilation>())
             {
                 target.WriteLine(str.GetCode());
             }
+        }
+
+        public void RegisterRequiredCode(IParameterizedMember member, string requiredCode)
+        {
+            if (requiredCodeSet.Add(member))
+                this.requiredCode.Add(requiredCode);
         }
     }
 }

@@ -15,15 +15,17 @@ namespace ShaderTranslator
     {
         public ResolveType Type;
         public string Name;
+        public string? RequiredCode;
 
-        public ResolveResult(ResolveType type, string name)
+        public ResolveResult(ResolveType type, string name, string? requiredCode = null)
         {
             Type = type;
             Name = name;
+            RequiredCode = requiredCode;
         }
 
         public static ResolveResult Field(string name) => new ResolveResult(ResolveType.Field, name);
-        public static ResolveResult Method(string name) => new ResolveResult(ResolveType.Method, name);
+        public static ResolveResult Method(string name, string? requiredCode = null) => new ResolveResult(ResolveType.Method, name, requiredCode);
         public static ResolveResult Operator(string name) => new ResolveResult(ResolveType.Operator, name);
     }
     public interface IExternalsResolver
@@ -66,9 +68,13 @@ namespace ShaderTranslator
         {
             if (symbol is IMethod method
                 && mathApi.TryResolve(method.DeclaringType, out var result)
-                && result.PrimitiveType.IsVector
-                && method.Name == "Length")
-                return ResolveResult.Method("length");
+                && result.PrimitiveType.IsVector)
+            {
+                if (method.Name == "Length")
+                    return ResolveResult.Method("length");
+                else if (method.Name == "LengthSquared")
+                    return ResolveResult.Method("lengthSquared", $"float lengthSquared({result.Name} value) {{return dot(value, value);}}");
+            }
             return null;
         }
     }
@@ -109,6 +115,25 @@ namespace ShaderTranslator
                     else
                         return null;
                 }
+            }
+            return null;
+        }
+    }
+
+    class VectorMethodResolver : IExternalsResolver
+    {
+        HashSet<string> knownMethods = new HashSet<string>() {
+            "Normalize",
+            "Cross",
+            "Dot",
+        };
+        public ResolveResult? TryResolve(ISymbol symbol, MathApi mathApi)
+        {
+            if (symbol is IMethod method
+                && mathApi.TryResolve(method.DeclaringType, out _)
+                && knownMethods.Contains(method.Name))
+            {
+                return ResolveResult.Method(method.Name.ToLowerInvariant());
             }
             return null;
         }

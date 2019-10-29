@@ -7,6 +7,7 @@ using ICSharpCode.Decompiler.CSharp.Syntax;
 using ICSharpCode.Decompiler.TypeSystem;
 using ICSharpCode.Decompiler.Semantics;
 using ICSharpCode.Decompiler.IL;
+using System.Globalization;
 
 namespace ShaderTranslator
 {
@@ -84,10 +85,61 @@ namespace ShaderTranslator
                 }
                 else VisitInvocation(invocation, new[] { binaryOperatorExpression.Left, binaryOperatorExpression.Right });
             }
+            else if (TryVisitAsDoubleComparison())
+                return;
             else
-            {
                 VisitAsUsual();
+
+            // TODO: This should be a prepass in a separate visitor.
+            bool TryVisitAsDoubleComparison()
+            {
+                if (op == "<" || op == ">" || op == "<=" || op == ">=" || op == "==" || op == "!=")
+                {
+                    if (IsDoubleWith(binaryOperatorExpression.Left, out ConversionResolveResult conversion)
+                     && IsDoubleWith(binaryOperatorExpression.Right, out ConstantResolveResult constant))
+                    {
+                        WriteCast(binaryOperatorExpression.Left);
+                        WriteOp();
+                        WriteConstant(constant);
+                        return true;
+                    }
+                    else if (IsDoubleWith(binaryOperatorExpression.Left, out constant)
+                     && IsDoubleWith(binaryOperatorExpression.Right, out conversion))
+                    {
+                        WriteConstant(constant);
+                        WriteOp();
+                        WriteCast(binaryOperatorExpression.Right);
+                        return true;
+                    }
+
+                    static bool IsDoubleWith<T>(AstNode node, out T conversionResolveResult) 
+                        where T : ICSharpCode.Decompiler.Semantics.ResolveResult
+                    {
+                        conversionResolveResult = node.Annotation<T>();
+                        return conversionResolveResult != null && conversionResolveResult.Type.IsKnownType(KnownTypeCode.Double);
+                    }
+
+                    void WriteCast(AstNode node)
+                    {
+                        if (binaryOperatorExpression.Left is CastExpression cast)
+                            cast.Expression.AcceptVisitor(this);
+                        else
+                            binaryOperatorExpression.Left.AcceptVisitor(this);
+                    }
+                    void WriteOp()
+                    {
+                        codeBuilder.Write(" ");
+                        codeBuilder.Write(op);
+                        codeBuilder.Write(" ");
+                    }
+                    void WriteConstant(ConstantResolveResult constant)
+                    {
+                        codeBuilder.Write(((double)constant.ConstantValue).ToString("0.0", CultureInfo.InvariantCulture));
+                    }
+                }
+                return false;
             }
+
 
             void VisitAsUsual()
             {
@@ -103,6 +155,10 @@ namespace ShaderTranslator
         {
             if (SymbolResolver.TryResolve(invocation.Member) is ResolveResult result)
             {
+                if (result.RequiredCode != null)
+                {
+                    MethodManager.RegisterRequiredCode(invocation.Member, result.RequiredCode);
+                }
                 switch (result.Type)
                 {
                     case ResolveType.Field:
@@ -251,7 +307,7 @@ namespace ShaderTranslator
         bool TryThisAccess(AstNode node)
         {
             var memberReference = node.Annotation<MemberResolveResult>();
-            if(memberReference.TargetResult is ThisResolveResult)
+            if (memberReference.TargetResult is ThisResolveResult)
             {
                 codeBuilder.Write("_this.");
                 codeBuilder.Write(memberReference.Member.Name);
@@ -296,9 +352,9 @@ namespace ShaderTranslator
             bool isFirst = true;
             if (!method.IsStatic)
             {
-                if(invocationExpression.Target is MemberReferenceExpression memberReference)
+                if (invocationExpression.Target is MemberReferenceExpression memberReference)
                     AddParameter(memberReference.Target);
-                else if(invocationResolveResult.TargetResult is ILVariableResolveResult)
+                else if (invocationResolveResult.TargetResult is ILVariableResolveResult)
                 {
                     isFirst = false;
                     codeBuilder.Write("_this");
@@ -390,7 +446,7 @@ namespace ShaderTranslator
                     else throw new NotImplementedException();
                 }
             }
-            else if(assignmentExpression.Left is IdentifierExpression identifier
+            else if (assignmentExpression.Left is IdentifierExpression identifier
                 && identifier.Annotation<MemberResolveResult>() is MemberResolveResult result
                 && result != null
                 && result.TargetResult is ThisResolveResult thisResolve
