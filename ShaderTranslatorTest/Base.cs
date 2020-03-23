@@ -23,7 +23,7 @@ namespace ShaderTranslator.Test
         {
             var result = engine.Compile(shaderFunction.Target, shaderFunction.Method, shaderType);
 
-            var startInfo = new ProcessStartInfo(@"E:\Programmieren\GitHub\glslang\build\StandAlone\Release\glslangValidator.exe",
+            var startInfo = new ProcessStartInfo("glslangValidator",
                 "--stdin " +
                 shaderType switch
                 {
