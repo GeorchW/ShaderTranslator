@@ -5,7 +5,7 @@ using System.Text;
 namespace ShaderTranslator.Syntax
 {
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Field, AllowMultiple = false)]
-    class UniformAttribute : Attribute
+    public class UniformAttribute : Attribute
     {
         public int Slot { get; }
         public UniformAttribute(int slot)
