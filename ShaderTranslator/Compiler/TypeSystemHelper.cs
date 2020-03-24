@@ -11,7 +11,19 @@ namespace ShaderTranslator
 {
     static class TypeSystemHelper
     {
-        public static Type? ToReflectionType(this IType type) => Type.GetType(type.ReflectionName);
+        public static Type? ToReflectionType(this IType type)
+        {
+            var result = Type.GetType(type.ReflectionName);
+            if (result != null) 
+                return result;
+            if (type is IEntity ie)
+            {
+                var asmName = new AssemblyName(ie.ParentModule.FullAssemblyName);
+                var asm = Assembly.Load(asmName);
+                return asm.GetType(type.FullName);
+            }
+            return null;
+        }
         public static MethodInfo? ToReflectionMethod(this IMethod method)
         {
             var type = method.DeclaringType.ToReflectionType();
@@ -41,7 +53,7 @@ namespace ShaderTranslator
             string attrName = attributeType.FullName!; //isn't null for attributes
             foreach (var attr in attributes)
             {
-                if(attr.AttributeType.FullName == attrName)
+                if (attr.AttributeType.FullName == attrName)
                 {
                     attribute = attr;
                     return true;

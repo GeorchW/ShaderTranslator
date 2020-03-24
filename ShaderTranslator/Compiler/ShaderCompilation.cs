@@ -1,10 +1,32 @@
-﻿using System.Reflection;
+﻿using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using System.Reflection.Metadata;
 using ShaderTranslator.Syntax;
+using System;
 
 namespace ShaderTranslator
 {
+    public enum UniformType
+    {
+        UBO,
+        Texture,
+    }
+    public class Uniform
+    {
+        public UniformType UniformType {get;}
+        public Type Type { get; }
+        public int Slot { get; }
+        public string Name { get; }
+
+        internal Uniform(UniformType uniformType, Type type, int slot, string name)
+        {
+            UniformType = uniformType;
+            Type = type;
+            Slot = slot;
+            Name = name;
+        }
+    }
     public class ShaderCompilation
     {
         internal TypeManager TypeManager { get; }
@@ -15,8 +37,10 @@ namespace ShaderTranslator
         internal SymbolResolver SymbolResolver { get; }
         internal UniformManager UniformManager { get; }
 
+
         public ShaderType ShaderType { get; }
         public string Code { get; private set; } = null!;
+        public IReadOnlyCollection<Uniform> Uniforms { get; private set; } = null!;
 
         internal ShaderCompilation(
             ILSpyManager ilSpyManager,
@@ -52,6 +76,14 @@ namespace ShaderTranslator
             MethodManager.Print(result);
             MainMethodGenerator.GenerateMainMethod(EntryPoint, result, ShaderType);
             Code = result.ToString();
+
+            var uniforms = new List<Uniform>();
+            foreach (var uniform in UniformManager.Uniforms)
+            {
+                var uniformType = uniform is TextureCompilation ? UniformType.Texture : UniformType.UBO;
+                uniforms.Add(new Uniform(uniformType, uniform.Variable.Type.ToReflectionType() ?? throw new NullReferenceException(), uniform.Slot, uniform.Name));
+            }
+            Uniforms = uniforms.AsReadOnly();
         }
     }
 }

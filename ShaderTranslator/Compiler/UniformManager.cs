@@ -17,6 +17,8 @@ namespace ShaderTranslator
         SymbolResolver symbolResolver;
         NamingScope globalScope;
 
+        public IEnumerable<UniformCompilation> Uniforms => uniforms.Values;
+
         public UniformManager(TypeManager typeManager, SymbolResolver symbolResolver, NamingScope globalScope)
         {
             this.typeManager = typeManager;
@@ -60,8 +62,8 @@ namespace ShaderTranslator
         public void Print(IndentedStringBuilder codeBuilder)
         {
             var uniforms = from uniform in this.uniforms.Values
-                                  orderby uniform.Slot
-                                  select uniform;
+                           orderby uniform.Slot
+                           select uniform;
             foreach (var uniform in uniforms)
             {
                 uniform.Print(codeBuilder, typeManager);
