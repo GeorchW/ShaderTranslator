@@ -30,6 +30,7 @@ namespace ShaderTranslator
             result.MathApi.AddType(typeof(Vector2), ComponentType.Float, VectorLength.Vector2);
             result.MathApi.AddType(typeof(Vector3), ComponentType.Float, VectorLength.Vector3);
             result.MathApi.AddType(typeof(Vector4), ComponentType.Float, VectorLength.Vector4);
+            result.MathApi.AddType(typeof(Matrix4x4), ComponentType.Float, VectorLength.Matrix);
             return result;
         }
         public void AddExternalsResolver(IExternalsResolver resolver) => resolvers.Add(resolver);

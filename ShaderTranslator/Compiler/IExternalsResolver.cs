@@ -1,4 +1,5 @@
-﻿using ICSharpCode.Decompiler.TypeSystem;
+﻿using System.Linq;
+using ICSharpCode.Decompiler.TypeSystem;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -67,13 +68,13 @@ namespace ShaderTranslator
         public ResolveResult? TryResolve(ISymbol symbol, MathApi mathApi)
         {
             if (symbol is IMethod method
-                && mathApi.TryResolve(method.DeclaringType, out var result)
-                && result.PrimitiveType.IsVector)
+                && mathApi.TryResolve(method.DeclaringType, out var thisType)
+                && thisType.PrimitiveType.IsVector)
             {
                 if (method.Name == "Length")
                     return ResolveResult.Method("length");
                 else if (method.Name == "LengthSquared")
-                    return ResolveResult.Method("lengthSquared", $"float lengthSquared({result.Name} value) {{return dot(value, value);}}");
+                    return ResolveResult.Method("lengthSquared", $"float lengthSquared({thisType.Name} value) {{return dot(value, value);}}");
             }
             return null;
         }
@@ -122,7 +123,7 @@ namespace ShaderTranslator
 
     class VectorMethodResolver : IExternalsResolver
     {
-        HashSet<string> knownMethods = new HashSet<string>() {
+        HashSet<string> simpleMethods = new HashSet<string>() {
             "Normalize",
             "Cross",
             "Dot",
@@ -130,10 +131,37 @@ namespace ShaderTranslator
         public ResolveResult? TryResolve(ISymbol symbol, MathApi mathApi)
         {
             if (symbol is IMethod method
-                && mathApi.TryResolve(method.DeclaringType, out _)
-                && knownMethods.Contains(method.Name))
+                && mathApi.TryResolve(method.DeclaringType, out _))
             {
-                return ResolveResult.Method(method.Name.ToLowerInvariant());
+                if (simpleMethods.Contains(method.Name))
+                    return ResolveResult.Method(method.Name.ToLowerInvariant());
+
+                if (!method.Parameters.All(p => mathApi.TryResolve(p.Type, out _)))
+                    return null;
+
+                if (method.Name == "Transform")
+                {
+                    if (method.Parameters.Count == 2 && method.Parameters[1].Type.Name == "Matrix4x4")
+                    {
+                        if (method.Parameters[0].Type.Name == "Vector3")
+                        {
+                            if (method.DeclaringType.Name == "Vector3")
+                                return ResolveResult.Method("transform", "vec3 transform(vec3 v, mat4x4 m) { return (m * vec4(v, 1)).xyz; }");
+                            else if (method.DeclaringType.Name == "Vector4")
+                                return ResolveResult.Method("transform", "vec4 transform(vec3 v, mat4x4 m) { return m * vec4(v, 1); }");
+                        }
+                        else if (method.Parameters[0].Type.Name == "Vector4" && method.DeclaringType.Name == "Vector4")
+                            return ResolveResult.Method("transform", "vec4 transform(vec4 v, mat4x4 m) { return m * v; }");
+                    }
+
+                    if (method.Parameters.Count == 2 && method.Parameters[0].Type.Name == "Vector4" && method.Parameters[1].Type.Name == "Matrix4x4")
+                        return ResolveResult.Method("transform", "vec4 transform(vec4 v, mat4x4 m) { return m * v; }");
+                }
+                else if (method.Name == "TransformNormal")
+                {
+                    if (method.Parameters.Count == 2 && method.Parameters[0].Type.Name == "Vector3" && method.Parameters[1].Name == "Matrix4x4")
+                        return ResolveResult.Method("transformNormal", "vec3 transformNormal(vec3 v, mat4x4 m) { return m * vec4(v, 0); }");
+                }
             }
             return null;
         }
