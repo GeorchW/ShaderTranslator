@@ -71,5 +71,16 @@ namespace ShaderTranslator
             }
             return defaultName;
         }
+
+        public static string GuessLocation(this Assembly assembly)
+        {
+            string location = assembly.Location;
+            if (string.IsNullOrWhiteSpace(location))
+            {
+                location = assembly.ManifestModule.ScopeName;
+            }
+
+            return location;
+        }
     }
 }

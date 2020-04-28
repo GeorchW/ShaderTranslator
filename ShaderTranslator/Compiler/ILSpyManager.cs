@@ -36,8 +36,7 @@ namespace ShaderTranslator
 
         public CSharpDecompiler GetDecompiler(Assembly assembly)
         {
-            string location = assembly.Location;
-            return GetDecompiler(location);
+            return GetDecompiler(assembly.GuessLocation());
         }
 
         private CSharpDecompiler GetDecompiler(string location)

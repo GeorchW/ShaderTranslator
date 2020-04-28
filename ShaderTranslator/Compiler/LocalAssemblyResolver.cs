@@ -15,7 +15,7 @@ namespace ShaderTranslator
             string location;
             try
             {
-                location = Assembly.Load(reference.FullName).Location;
+                location = Assembly.Load(reference.FullName).GuessLocation();
             }
             catch(FileNotFoundException)
             {
