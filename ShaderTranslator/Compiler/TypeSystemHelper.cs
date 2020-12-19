@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.Runtime.Loader;
+using System;
 using ICSharpCode.Decompiler.TypeSystem;
 using System.Reflection;
 using System.Linq;
@@ -19,7 +20,13 @@ namespace ShaderTranslator
             if (type is IEntity ie)
             {
                 var asmName = new AssemblyName(ie.ParentModule.FullAssemblyName);
-                var asm = Assembly.Load(asmName);
+                var alc = AssemblyLoadContext.GetLoadContext(Assembly.GetExecutingAssembly());
+                Assembly asm;
+                if(alc != null)
+                    asm = alc.LoadFromAssemblyName(asmName);
+                else
+                    asm = Assembly.Load(asmName);
+                // var asm = alc?.LoadFromAssemblyName(asmName) ?? Assembly.Load(asmName);
                 return asm.GetType(type.FullName);
             }
             return null;
