@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <!-- Disable the "Field is never assigned and will always have its default value" warning -->
     <NoWarn>1701;1702;0649</NoWarn>
   </PropertyGroup>
