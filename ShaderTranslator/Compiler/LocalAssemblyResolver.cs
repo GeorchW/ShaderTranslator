@@ -28,7 +28,7 @@ namespace ShaderTranslator
 
         public PEFile? ResolveModule(PEFile mainModule, string moduleName)
         {
-            var result = new PEFile(moduleName);
+            var result = new PEFile(moduleName, PEStreamOptions.PrefetchEntireImage);
             return result;
         }
     }
