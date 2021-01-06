@@ -67,7 +67,7 @@ namespace ShaderTranslator
         {
             if (attributes.TryGetAttribute(typeof(GlslAttribute), out var attribute))
             {
-                defaultName = (string)attribute.FixedArguments[0].Value;
+                defaultName = (string)(attribute.FixedArguments[0].Value ?? throw new Exception("GLSL attribute parameters may not be null."));
             }
             return defaultName;
         }

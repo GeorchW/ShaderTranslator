@@ -54,7 +54,7 @@ namespace ShaderTranslator
             {
                 if (entryPoint.Method.GetReturnTypeAttributes().TryGetAttribute(typeof(GlslAttribute), out var attribute))
                 {
-                    singleReturnName = (string)attribute.FixedArguments[0].Value;
+                    singleReturnName = (string)(attribute.FixedArguments[0].Value ?? throw new Exception("GLSL attribute parameters may not be null."));
                     if (!singleReturnName.StartsWith("gl_"))
                     {
                         codeBuilder.Write($"layout(location = {outputLocationIndex++}) out {entryPoint.ReturnType.Name} {singleReturnName};");

@@ -68,7 +68,7 @@ namespace ShaderTranslator
             {
                 if (attribute.AttributeType.FullName != typeof(VerbatimHeaderAttribute).FullName)
                     continue;
-                string code = (string)attribute.FixedArguments[0].Value;
+                string code = (string)(attribute.FixedArguments[0].Value ?? throw new Exception("Verbatim headers may not be null."));
                 result.WriteLine(code);
             }
             TypeManager.Print(result);

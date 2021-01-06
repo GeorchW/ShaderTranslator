@@ -44,7 +44,7 @@ namespace ShaderTranslator
             {
                 if (!field.GetAttributes().TryGetAttribute(typeof(ArrayLengthAttribute), out var arrayLengthAttribute))
                     throw new Exception($"Arrays must be decorated with {nameof(ArrayLengthAttribute)}!");
-                arrayLength = (int)arrayLengthAttribute.FixedArguments[0].Value;
+                arrayLength = (int)arrayLengthAttribute.FixedArguments[0].Value!;
                 type = arrayType.ElementType;
             }
             return new Field(typeManager.GetTargetType(type), field.Name, arrayLength, field, field.GetAttributes().GetName(null));

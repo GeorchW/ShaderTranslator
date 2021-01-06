@@ -145,7 +145,7 @@ namespace ShaderTranslator
         {
             Variable = variable;
             Name = name;
-            Slot = (int)attribute.FixedArguments[0].Value;
+            Slot = (int)attribute.FixedArguments[0].Value!;
         }
 
         public abstract void Print(IndentedStringBuilder codeBuilder, TypeManager typeManager);
