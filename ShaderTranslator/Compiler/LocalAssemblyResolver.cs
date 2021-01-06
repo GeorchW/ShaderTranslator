@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Reflection.PortableExecutable;
 
 namespace ShaderTranslator
 {
@@ -22,7 +23,7 @@ namespace ShaderTranslator
                 Console.WriteLine($"Warning: Did not find '{reference}'.");
                 return null;
             }
-            return new PEFile(location);
+            return new PEFile(location, PEStreamOptions.PrefetchEntireImage);
         }
 
         public PEFile? ResolveModule(PEFile mainModule, string moduleName)

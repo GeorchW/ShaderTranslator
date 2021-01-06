@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Text;
 
 namespace ShaderTranslator
@@ -43,7 +44,7 @@ namespace ShaderTranslator
         {
             if (!AssemblyDecompilers.TryGetValue(location, out var decompiler))
             {
-                var peFile = new PEFile(location);
+                var peFile = new PEFile(location, PEStreamOptions.PrefetchEntireImage);
                 var typeSystem = new DecompilerTypeSystem(peFile, new LocalAssemblyResolver());
                 decompiler = AssemblyDecompilers[location] = new CSharpDecompiler(typeSystem, settings);
                 decompiler.ILTransforms.Remove(decompiler.ILTransforms.Where(x => x is HighLevelLoopTransform).Single());
