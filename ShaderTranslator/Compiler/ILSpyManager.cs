@@ -18,9 +18,11 @@ namespace ShaderTranslator
     {
         DecompilerSettings settings;
 
-        Dictionary<string, CSharpDecompiler> AssemblyDecompilers = new Dictionary<string, CSharpDecompiler>();
+        Dictionary<AssemblyName, CSharpDecompiler> AssemblyDecompilers = new();
 
-        public ILSpyManager()
+        public PEFileResolver PEFileResolver { get; }
+
+        public ILSpyManager(PEFileResolver peFileResolver)
         {
             settings = new DecompilerSettings(LanguageVersion.CSharp1);
             settings.ThrowOnAssemblyResolveErrors = false;
@@ -33,27 +35,29 @@ namespace ShaderTranslator
             settings.UsingDeclarations = false;
             settings.ForEachStatement = false;
             settings.IntroduceIncrementAndDecrement = false;
+            
+            PEFileResolver = peFileResolver;
         }
 
         public CSharpDecompiler GetDecompiler(Assembly assembly)
         {
-            return GetDecompiler(assembly.GuessLocation());
+            return GetDecompiler(assembly.GetName());
         }
 
-        private CSharpDecompiler GetDecompiler(string location)
+        private CSharpDecompiler GetDecompiler(AssemblyName assemblyName)
         {
-            if (!AssemblyDecompilers.TryGetValue(location, out var decompiler))
+            if (!AssemblyDecompilers.TryGetValue(assemblyName, out var decompiler))
             {
-                var peFile = new PEFile(location, PEStreamOptions.PrefetchEntireImage);
-                var typeSystem = new DecompilerTypeSystem(peFile, new LocalAssemblyResolver());
-                decompiler = AssemblyDecompilers[location] = new CSharpDecompiler(typeSystem, settings);
+                var peFile = PEFileResolver.Resolve(assemblyName);
+                var typeSystem = new DecompilerTypeSystem(peFile, PEFileResolver);
+                decompiler = AssemblyDecompilers[assemblyName] = new CSharpDecompiler(typeSystem, settings);
                 decompiler.ILTransforms.Remove(decompiler.ILTransforms.Where(x => x is HighLevelLoopTransform).Single());
             }
             return decompiler;
         }
 
         public SyntaxTree GetSyntaxTree(IMethod method)
-            => GetDecompiler(method.ParentModule.PEFile.FileName).Decompile(method.MetadataToken);
+            => GetDecompiler(new AssemblyName(method.ParentModule.FullAssemblyName)).Decompile(method.MetadataToken);
 
         public (SyntaxTree, IDecompilerTypeSystem) GetSyntaxTree(MethodInfo method)
         {

@@ -7,10 +7,14 @@ namespace ShaderTranslator
 {
     public class CompileEngine
     {
-        ILSpyManager ilSpyManager = new ILSpyManager();
+        ILSpyManager ilSpyManager;
         public SymbolResolver SymbolResolver { get; }
 
-        public CompileEngine(SymbolResolver symbolResolver) => SymbolResolver = symbolResolver;
+        public CompileEngine(SymbolResolver symbolResolver, PEFileResolver peFileResolver)
+        {
+            SymbolResolver = symbolResolver;
+            ilSpyManager = new ILSpyManager(peFileResolver);
+        }
 
         public ShaderCompilation Compile(object? obj, MethodInfo method, ShaderType shaderType)
         {
